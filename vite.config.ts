@@ -13,8 +13,8 @@ export default defineConfig({
         short_name: 'Doses',
         description:
           'Aplicativo prático e acessível para organizar medicamentos e acompanhar administrações de pessoas e animais de estimação.',
-        theme_color: '#00254E',
-        background_color: '#F4F8FB',
+        theme_color: '#7EDCB9',
+        background_color: '#FFFFFF',
         display: 'standalone',
         orientation: 'portrait-primary',
         start_url: '/',
@@ -22,6 +22,12 @@ export default defineConfig({
         lang: 'pt-BR',
         categories: ['health', 'medical', 'productivity', 'lifestyle'],
         icons: [
+          {
+            src: '/icons/icon-180x180.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any',
+          },
           {
             src: '/icons/icon-192x192.png',
             sizes: '192x192',

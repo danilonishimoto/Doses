@@ -83,6 +83,43 @@ export class ProfileService {
     return db.profiles.get(id);
   }
 
+  static async updateProfile(
+    id: string,
+    updates: Partial<Omit<Profile, 'id' | 'accountId' | 'createdAt'>>
+  ): Promise<Profile> {
+    const existing = await db.profiles.get(id);
+    if (!existing) {
+      throw new Error('Perfil não encontrado.');
+    }
+
+    if (updates.name !== undefined && !updates.name.trim()) {
+      throw new Error('O nome é obrigatório.');
+    }
+    if (updates.surname !== undefined && !updates.surname.trim()) {
+      throw new Error('O sobrenome é obrigatório.');
+    }
+    if (updates.age !== undefined && (isNaN(updates.age) || updates.age <= 0 || updates.age > 150)) {
+      throw new Error('Informe uma idade válida em anos.');
+    }
+    if (updates.weight !== undefined && (isNaN(updates.weight) || updates.weight <= 0 || updates.weight > 500)) {
+      throw new Error('Informe um peso válido em kg.');
+    }
+    if (updates.height !== undefined && (isNaN(updates.height) || updates.height <= 0 || updates.height > 300)) {
+      throw new Error('Informe uma altura válida em cm.');
+    }
+
+    const updated: Profile = {
+      ...existing,
+      ...updates,
+      name: updates.name ? updates.name.trim() : existing.name,
+      surname: updates.surname ? updates.surname.trim() : existing.surname,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await db.profiles.put(updated);
+    return updated;
+  }
+
   static setActiveProfileId(id: string): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('doses_active_profile_id', id);

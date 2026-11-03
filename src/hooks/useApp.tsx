@@ -9,6 +9,10 @@ interface AppContextValue {
   profiles: Profile[];
   isLoading: boolean;
   selectActiveProfile: (profileId: string) => Promise<boolean>;
+  updateProfile: (
+    profileId: string,
+    updates: Partial<Omit<Profile, 'id' | 'accountId' | 'createdAt'>>
+  ) => Promise<Profile>;
   refreshProfiles: () => Promise<void>;
   logout: () => void;
   switchProfile: () => void;
@@ -100,6 +104,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [currentAccount, profiles]
   );
 
+  const updateProfile = useCallback(
+    async (
+      profileId: string,
+      updates: Partial<Omit<Profile, 'id' | 'accountId' | 'createdAt'>>
+    ): Promise<Profile> => {
+      const updated = await ProfileService.updateProfile(profileId, updates);
+      setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      if (activeProfile?.id === updated.id) {
+        setActiveProfile(updated);
+      }
+      return updated;
+    },
+    [activeProfile]
+  );
+
   const switchProfile = useCallback(() => {
     ProfileService.clearActiveProfileId();
     setActiveProfile(null);
@@ -121,6 +140,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         profiles,
         isLoading,
         selectActiveProfile,
+        updateProfile,
         refreshProfiles,
         logout,
         switchProfile,

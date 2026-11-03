@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, ReactNode, forwardRef, useImperativeHandle, useRef } from 'react';
+import { InputHTMLAttributes, ReactNode, forwardRef } from 'react';
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -11,31 +11,17 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
   { label, error, rightAction, containerStyle, id, className, ...inputProps },
   ref
 ) {
-  const innerRef = useRef<HTMLInputElement>(null);
-  useImperativeHandle(ref, () => innerRef.current as HTMLInputElement);
-
   const inputId = id || `field-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
   const errorId = `${inputId}-error`;
-
-  const handleWrapperClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Se o toque/clique foi na borda ou no fundo do container (fora de botões de ação),
-    // garante a delegação nativa direta para o campo
-    if (e.target === e.currentTarget && innerRef.current) {
-      innerRef.current.focus();
-    }
-  };
 
   return (
     <div className="form-group" style={containerStyle}>
       <label htmlFor={inputId} className="form-label">
         {label}
       </label>
-      <div
-        className={`input-wrapper ${error ? 'has-error' : ''}`}
-        onClick={handleWrapperClick}
-      >
+      <div className={`input-wrapper ${error ? 'has-error' : ''}`}>
         <input
-          ref={innerRef}
+          ref={ref}
           id={inputId}
           className={`input-field ${rightAction ? 'has-action' : ''} ${className || ''}`}
           aria-invalid={Boolean(error)}

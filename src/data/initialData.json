@@ -1,0 +1,254 @@
+{
+  "profiles": [
+    {
+      "id": "prof-helena",
+      "name": "Helena Costa",
+      "type": "self",
+      "relationship": "Titular (Eu)",
+      "birthDate": "1984-05-14",
+      "speciesOrNotes": "Uso contínuo matinal e suplementação noturna.",
+      "avatarColor": "#00254E",
+      "allergiesOrAlerts": ["Dipirona"]
+    },
+    {
+      "id": "prof-artur",
+      "name": "Sr. Artur Costa",
+      "type": "family",
+      "relationship": "Pai (Idoso sob cuidados)",
+      "birthDate": "1948-11-20",
+      "speciesOrNotes": "Acompanhamento cardiológico e controle de pressão arterial.",
+      "avatarColor": "#4E6D93",
+      "allergiesOrAlerts": ["Penicilina", "Anti-inflamatórios não esteroides"]
+    },
+    {
+      "id": "prof-thor",
+      "name": "Thor",
+      "type": "pet",
+      "relationship": "Cão (Golden Retriever • 28 kg)",
+      "birthDate": "2020-03-10",
+      "speciesOrNotes": "Administrar comprimidos junto com petisco úmido.",
+      "avatarColor": "#7BD9B0",
+      "allergiesOrAlerts": []
+    }
+  ],
+  "medications": [
+    {
+      "id": "med-losartana",
+      "profileId": "prof-artur",
+      "name": "Losartana Potássica",
+      "dosage": "50 mg",
+      "form": "Comprimido",
+      "instructions": "Tomar 1 comprimido com um copo de água, preferencialmente antes do café da manhã e do jantar.",
+      "frequencyLabel": "A cada 12 horas (2x ao dia)",
+      "times": ["08:00", "20:00"],
+      "startDate": "2026-01-10",
+      "continuousUse": true,
+      "active": true,
+      "notes": "Monitorar pressão arterial semanalmente."
+    },
+    {
+      "id": "med-levotiroxina",
+      "profileId": "prof-helena",
+      "name": "Levotiroxina Sódica",
+      "dosage": "75 mcg",
+      "form": "Comprimido",
+      "instructions": "Tomar em jejum absoluto, pelo menos 30 minutos antes do café da manhã.",
+      "frequencyLabel": "1x ao dia (Manhã)",
+      "times": ["07:00"],
+      "startDate": "2025-06-01",
+      "continuousUse": true,
+      "active": true,
+      "notes": "Manter na embalagem original protegida da luz."
+    },
+    {
+      "id": "med-amoxicilina",
+      "profileId": "prof-artur",
+      "name": "Cloridrato de Ambroxol",
+      "dosage": "5 mL (30 mg/5mL)",
+      "form": "Xarope",
+      "instructions": "Utilizar o copo dosador até a marca de 5 mL após as refeições.",
+      "frequencyLabel": "A cada 8 horas (3x ao dia)",
+      "times": ["08:00", "14:00", "22:00"],
+      "startDate": "2026-10-30",
+      "endDate": "2026-11-06",
+      "continuousUse": false,
+      "active": true,
+      "notes": "Tratamento de 7 dias prescrito na consulta de retorno."
+    },
+    {
+      "id": "med-apoquel",
+      "profileId": "prof-thor",
+      "name": "Oclacitinib (Apoquel Vet)",
+      "dosage": "16 mg (1 comprimido)",
+      "form": "Comprimido",
+      "instructions": "Oferecer junto à refeição da manhã e da tarde para evitar desconforto gástrico.",
+      "frequencyLabel": "A cada 12 horas (2x ao dia)",
+      "times": ["09:00", "21:00"],
+      "startDate": "2026-10-28",
+      "endDate": "2026-11-11",
+      "continuousUse": false,
+      "active": true,
+      "notes": "Prescrição veterinária Dra. Camila."
+    },
+    {
+      "id": "med-magnesio",
+      "profileId": "prof-helena",
+      "name": "Magnésio Dimalato",
+      "dosage": "260 mg (2 cápsulas)",
+      "form": "Cápsula",
+      "instructions": "Ingerir com água cerca de 1 hora antes de dormir.",
+      "frequencyLabel": "1x ao dia (Noite)",
+      "times": ["21:30"],
+      "startDate": "2026-09-15",
+      "continuousUse": true,
+      "active": true
+    }
+  ],
+  "doseLogs": [
+    {
+      "id": "dose-today-1",
+      "medicationId": "med-levotiroxina",
+      "profileId": "prof-helena",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "07:00",
+      "status": "administered",
+      "administeredAt": "07:04",
+      "administeredBy": "Helena Costa",
+      "notes": "Tomado em jejum conforme orientação."
+    },
+    {
+      "id": "dose-today-2",
+      "medicationId": "med-losartana",
+      "profileId": "prof-artur",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "08:00",
+      "status": "administered",
+      "administeredAt": "08:10",
+      "administeredBy": "Helena Costa",
+      "notes": "Pressão aferida antes: 120/80 mmHg."
+    },
+    {
+      "id": "dose-today-3",
+      "medicationId": "med-amoxicilina",
+      "profileId": "prof-artur",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "08:00",
+      "status": "administered",
+      "administeredAt": "08:12",
+      "administeredBy": "Helena Costa"
+    },
+    {
+      "id": "dose-today-4",
+      "medicationId": "med-apoquel",
+      "profileId": "prof-thor",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "09:00",
+      "status": "pending"
+    },
+    {
+      "id": "dose-today-5",
+      "medicationId": "med-amoxicilina",
+      "profileId": "prof-artur",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "14:00",
+      "status": "pending"
+    },
+    {
+      "id": "dose-today-6",
+      "medicationId": "med-losartana",
+      "profileId": "prof-artur",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "20:00",
+      "status": "pending"
+    },
+    {
+      "id": "dose-today-7",
+      "medicationId": "med-apoquel",
+      "profileId": "prof-thor",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "21:00",
+      "status": "pending"
+    },
+    {
+      "id": "dose-today-8",
+      "medicationId": "med-magnesio",
+      "profileId": "prof-helena",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "21:30",
+      "status": "pending"
+    },
+    {
+      "id": "dose-today-9",
+      "medicationId": "med-amoxicilina",
+      "profileId": "prof-artur",
+      "scheduledDate": "TODAY",
+      "scheduledTime": "22:00",
+      "status": "pending"
+    },
+    {
+      "id": "dose-yest-1",
+      "medicationId": "med-levotiroxina",
+      "profileId": "prof-helena",
+      "scheduledDate": "YESTERDAY",
+      "scheduledTime": "07:00",
+      "status": "administered",
+      "administeredAt": "07:01",
+      "administeredBy": "Helena Costa"
+    },
+    {
+      "id": "dose-yest-2",
+      "medicationId": "med-losartana",
+      "profileId": "prof-artur",
+      "scheduledDate": "YESTERDAY",
+      "scheduledTime": "08:00",
+      "status": "administered",
+      "administeredAt": "08:05",
+      "administeredBy": "Helena Costa"
+    },
+    {
+      "id": "dose-yest-3",
+      "medicationId": "med-apoquel",
+      "profileId": "prof-thor",
+      "scheduledDate": "YESTERDAY",
+      "scheduledTime": "09:00",
+      "status": "administered",
+      "administeredAt": "09:15",
+      "administeredBy": "Helena Costa",
+      "notes": "Aceitou bem com patê."
+    },
+    {
+      "id": "dose-yest-4",
+      "medicationId": "med-losartana",
+      "profileId": "prof-artur",
+      "scheduledDate": "YESTERDAY",
+      "scheduledTime": "20:00",
+      "status": "administered",
+      "administeredAt": "20:03",
+      "administeredBy": "Helena Costa"
+    },
+    {
+      "id": "dose-yest-5",
+      "medicationId": "med-magnesio",
+      "profileId": "prof-helena",
+      "scheduledDate": "YESTERDAY",
+      "scheduledTime": "21:30",
+      "status": "skipped",
+      "administeredBy": "Helena Costa",
+      "notes": "Dormiu mais cedo e optou por não tomar fora do horário."
+    }
+  ],
+  "settings": {
+    "activeProfileFilter": "all",
+    "highContrastFocus": true,
+    "compactView": false,
+    "notifications": {
+      "enabled": false,
+      "advanceReminderMinutes": 10,
+      "soundEnabled": true,
+      "vibrationEnabled": true,
+      "dailySummaryTime": "07:30",
+      "pushChannelReady": false
+    },
+    "lastLocalSyncAt": "NOW"
+  }
+}

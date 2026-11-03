@@ -405,3 +405,153 @@ export function DosesAppIcon({
  }
 
 export const BrandCapsuleIcon = DosesAppIcon;
+
+export function HomeTabIcon({ active = false, size = 38 }: { active?: boolean; size?: number }) {
+  const strokeWidth = active ? 2.40625 : 1.8;
+  return (
+    <svg width={size} height={size} viewBox="0 0 38.5 38.5" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
+      <path
+        d="M7.06836 17.4454C10.5273 14.5278 14.3473 10.9485 18.107 7.97077C18.7988 7.36921 19.4004 7.30905 20.1824 8.00085C23.6113 11.0087 27.4914 14.4676 31.3113 17.3852"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+      <path
+        d="M9.92514 16.8438C9.80483 20.1824 9.86499 24.3031 10.0154 28.2734C10.0455 30.3488 11.0681 31.1008 13.1435 31.0105L15.5798 30.9805C15.64 28.6645 15.5197 26.168 15.64 23.7016C15.7001 22.1074 16.9033 21.2652 19.0087 21.2953C21.1744 21.2051 22.558 22.1977 22.6482 23.7918C22.7384 26.2281 22.588 28.6945 22.6783 31.0105L25.656 31.0707C27.7615 31.1309 28.724 30.1984 28.724 28.3035C28.754 24.6941 28.6037 20.2727 28.6939 16.9039"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+    </svg>
+  );
+}
+
+export function CronogramaTabIcon({ active = false, size = 38 }: { active?: boolean; size?: number }) {
+  const strokeWidth = active ? 2.40625 : 1.8;
+  return (
+    <svg width={size} height={size} viewBox="0 0 38.5 37.5" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
+      <path
+        d="M13.1141 9.4336C12.0313 9.4336 10.9485 9.34571 10.0161 9.49219C8.21137 9.75586 7.63988 11.0449 7.66996 12.9199C7.73012 17.1387 7.54965 22.7051 7.7602 26.9531C7.85043 29.4141 8.84301 30.293 11.2793 30.3516C16.1821 30.3809 21.6864 30.4688 26.8899 30.293C29.5067 30.2051 30.6797 29.3848 30.77 26.9824C30.8675 23.4202 30.7871 19.1266 30.7372 15.3809C30.7255 14.5057 30.7155 13.6604 30.7098 12.8613C30.6797 10.5176 29.6571 9.52149 27.2207 9.4336L25.1153 9.46289C21.2352 9.375 16.7836 9.31641 13.2344 9.4336C7.70004 15.3516 14.6172 15.1758 30.7372 15.3809"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+      <path
+        d="M13.2344 6.88477C13.1141 8.4082 13.2946 9.96094 13.2344 11.4844M25.1454 6.97266C25.2356 8.49609 25.0551 9.99023 25.1153 11.4551"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+      <path
+        d="M14.0766 19.9512C15.4 19.8926 15.4902 21.8848 14.1367 21.9141C12.7832 21.9727 12.7531 20.0098 14.0766 19.9512ZM24.1226 19.9512C25.416 20.0098 25.4762 21.8848 24.1226 21.9141C22.7992 21.9141 22.7992 19.9512 24.1226 19.9512ZM14.1969 25.3125C15.5203 25.2539 15.5805 27.2754 14.2269 27.2461C12.9035 27.2461 12.8434 25.3711 14.1969 25.3125ZM24.0625 25.3418C25.416 25.3125 25.416 27.2461 24.1226 27.2754C22.7691 27.3047 22.7391 25.3711 24.0625 25.3418Z"
+        fill="black"
+      />
+    </svg>
+  );
+}
+
+export function ReceitasTabIcon({ active = false, size = 38 }: { active?: boolean; size?: number }) {
+  const strokeWidth = active ? 2.40625 : 1.8;
+  return (
+    <svg width={size} height={size} viewBox="0 0 38.5 38.5" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
+      <path
+        d="M12.7531 7.1586C16.6934 7.06836 21.8668 7.21875 25.7769 7.12852C28.4238 7.06836 29.5066 8.24141 29.5367 10.5875C29.5668 16.2121 29.3863 22.709 29.5367 28.0328C29.5969 30.4992 28.6344 31.3715 25.9273 31.4316C21.6863 31.552 16.8137 31.3414 12.5426 31.4316C10.1965 31.4918 9.11367 30.5293 9.05351 28.0328C8.96328 22.5586 9.2039 16.1219 9.02343 10.5273C8.96328 8.1211 9.98593 7.24883 12.7531 7.1586Z"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+      <path
+        d="M19.25 12.2418C19.205 13.2167 19.2198 14.1841 19.2348 15.1552M19.2348 15.1552C19.2499 16.1316 19.2651 17.1118 19.2199 18.107M19.2348 15.1552C18.2824 15.1365 17.3336 15.1146 16.3625 15.1594M19.2348 15.1552C20.1998 15.1742 21.1684 15.1899 22.1675 15.1293"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+      <path
+        d="M13.9863 23.2203C17.2348 23.0398 20.9945 23.3105 24.4234 23.1602M14.0766 26.95C16.2723 26.8297 19.0094 27.0402 21.2652 26.8898"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+    </svg>
+  );
+}
+
+export function DosesAiSphere({ size = 150, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 150 150"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-label="Inteligência Artificial Doses"
+      role="img"
+      style={{ display: 'block' }}
+    >
+      <rect width="150" height="150" rx="75" fill="#B4ECFB" />
+      <path
+        d="M74.4762 31.8807C76.9762 45.0807 80.4762 55.4807 87.9762 61.4807C94.9762 67.4807 104.976 71.4807 117.776 73.9807C119.276 74.2807 119.176 75.4808 117.776 75.7808C104.476 78.4808 93.2762 81.9807 86.9762 88.4807C80.4762 95.4807 77.9763 107.481 75.7763 118.481C75.4763 119.881 74.2762 119.981 73.9762 118.581C71.4762 105.481 67.9762 93.4807 60.9762 87.4807C53.4762 80.9807 42.9762 77.9807 32.0762 75.9807C30.5762 75.6807 30.6762 74.4807 32.1762 74.1807C44.9762 71.6807 55.9762 68.2807 62.4762 60.4807C67.9762 53.4807 71.1763 42.4807 72.9762 32.0807C73.1763 30.7807 74.1763 30.5807 74.4762 31.8807Z"
+        fill="white"
+        strokeWidth="2.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+      <path
+        d="M122.99 6.75673C124.18 10.6076 125.573 13.5901 128.011 15.1262C130.3 16.6792 133.415 17.535 137.315 17.8494C137.773 17.8884 137.783 18.2494 137.376 18.386C133.502 19.6386 130.281 21.059 128.622 23.2087C126.92 25.5143 126.578 29.1757 126.293 32.5289C126.251 32.9563 125.896 33.0266 125.76 32.6193C124.573 28.7983 123.126 25.3388 120.837 23.7858C118.383 22.1006 115.152 21.5597 111.835 21.3304C111.378 21.2915 111.367 20.9304 111.804 20.7905C115.536 19.6144 118.7 18.2305 120.376 15.6865C121.78 13.4146 122.363 10.0277 122.55 6.86685C122.566 6.47258 122.857 6.37929 122.99 6.75673Z"
+        fill="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+    </svg>
+  );
+}
+
+export function CheckControlIcon({ completed = false, size = 56 }: { completed?: boolean; size?: number }) {
+  if (!completed) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
+        <rect x="1" y="1" width="54" height="54" rx="27" fill="white" />
+        <rect x="1" y="1" width="54" height="54" rx="27" stroke="#00254E" strokeWidth="2" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 63 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block', overflow: 'visible' }}>
+      <rect x="1" y="1" width="54" height="54" rx="27" fill="white" />
+      <rect x="1" y="1" width="54" height="54" rx="27" stroke="#00254E" strokeWidth="2" />
+      <path
+        d="M17 23.8462C21.3077 28.2769 26.1077 33.9385 30.2923 38C37.2462 29.2 47.2769 16.5231 60.0769 6"
+        strokeWidth="4.92308"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        stroke="black"
+      />
+    </svg>
+  );
+}
+
+export function TapMeArrow({ width = 34, height = 24 }: { width?: number; height?: number }) {
+  return (
+    <svg width={width} height={height} viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
+      <path
+        d="M2 14C10 18 18 18 28 8M28 8L22 7M28 8L26 14"
+        stroke="black"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

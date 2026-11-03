@@ -34,3 +34,19 @@ export interface OnboardingDraft {
     height: string;
   };
 }
+
+export type NavigationTab = 'home' | 'cronograma' | 'receitas' | 'usuarios';
+
+export type MedicationStatus = 'completed' | 'pending';
+
+export interface DailyMedicationItem {
+  id: string;
+  profileId?: string;
+  profileName: string;
+  avatar: AvatarId;
+  time: string;
+  medicationName: string;
+  dosage: string;
+  status: MedicationStatus;
+  cardColor: string;
+}

@@ -110,6 +110,8 @@ export function AddPersonScreen({
               <FormField
                 label="Nome"
                 placeholder="Digite o nome"
+                type="text"
+                inputMode="text"
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
@@ -117,6 +119,7 @@ export function AddPersonScreen({
                 }}
                 error={errors.name}
                 autoComplete="given-name"
+                autoCapitalize="words"
                 disabled={isSubmitting}
                 required
                 containerStyle={{ flex: 1, minWidth: 0 }}
@@ -125,6 +128,8 @@ export function AddPersonScreen({
               <FormField
                 label="Sobrenome"
                 placeholder="O sobrenome"
+                type="text"
+                inputMode="text"
                 value={surname}
                 onChange={(e) => {
                   setSurname(e.target.value);
@@ -132,6 +137,7 @@ export function AddPersonScreen({
                 }}
                 error={errors.surname}
                 autoComplete="family-name"
+                autoCapitalize="words"
                 disabled={isSubmitting}
                 required
                 containerStyle={{ flex: 1, minWidth: 0 }}
@@ -145,6 +151,9 @@ export function AddPersonScreen({
                 placeholder="Em anos"
                 type="number"
                 inputMode="numeric"
+                pattern="[0-9]*"
+                min={0}
+                max={150}
                 value={age}
                 onChange={(e) => {
                   setAge(e.target.value);
@@ -161,6 +170,7 @@ export function AddPersonScreen({
                 placeholder="Em kg"
                 type="text"
                 inputMode="decimal"
+                pattern="[0-9]*[.,]?[0-9]*"
                 value={weight}
                 onChange={(e) => {
                   setWeight(e.target.value);
@@ -177,6 +187,9 @@ export function AddPersonScreen({
                 placeholder="Em cm"
                 type="number"
                 inputMode="numeric"
+                pattern="[0-9]*"
+                min={0}
+                max={300}
                 value={height}
                 onChange={(e) => {
                   setHeight(e.target.value);

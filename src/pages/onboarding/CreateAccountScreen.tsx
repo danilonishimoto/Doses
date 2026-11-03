@@ -97,6 +97,8 @@ export function CreateAccountScreen({
 
           <FormField
             label="Usuário"
+            type="text"
+            inputMode="text"
             placeholder="Escolha seu nome de usuário"
             value={username}
             onChange={(e) => {
@@ -105,6 +107,9 @@ export function CreateAccountScreen({
             }}
             error={usernameError || undefined}
             autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             disabled={isSubmitting}
             required
           />
@@ -120,6 +125,9 @@ export function CreateAccountScreen({
             }}
             error={passwordError || undefined}
             autoComplete="new-password"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             disabled={isSubmitting}
             required
             rightAction={

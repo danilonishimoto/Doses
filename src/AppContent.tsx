@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useApp } from './hooks/useApp';
 import { CreateAccountScreen } from './pages/onboarding/CreateAccountScreen';
 import { MainProfileScreen } from './pages/onboarding/MainProfileScreen';
@@ -6,7 +7,11 @@ import { ProfileSelectionScreen } from './pages/onboarding/ProfileSelectionScree
 import { AddPersonScreen } from './pages/onboarding/AddPersonScreen';
 import { UpdatedProfilesScreen } from './pages/onboarding/UpdatedProfilesScreen';
 import { ProfileSelectionEntryScreen } from './pages/onboarding/ProfileSelectionEntryScreen';
-import { AppDashboardPlaceholder } from './components/AppDashboardPlaceholder';
+import { AppLayout } from './components/layout/AppLayout';
+import { HomeScreen } from './pages/home/HomeScreen';
+import { CronogramaScreen } from './pages/cronograma/CronogramaScreen';
+import { ReceitasScreen } from './pages/receitas/ReceitasScreen';
+import { UsuariosScreen } from './pages/usuarios/UsuariosScreen';
 import type { Profile } from './types';
 
 export type FlowStep =
@@ -26,7 +31,6 @@ export function AppContent() {
     isLoading,
     selectActiveProfile,
     refreshProfiles,
-    switchProfile,
   } = useApp();
 
   const [onboardingSubstep, setOnboardingSubstep] = useState<FlowStep | null>(null);
@@ -103,13 +107,19 @@ export function AppContent() {
     );
   }
 
-  // 4. Se já há um perfil ativo selecionado e persistido, exibe a área provisória do perfil
+  // 4. Se já há um perfil ativo selecionado e persistido, exibe a Home e a navegação principal do aplicativo
   if (activeProfile) {
     return (
-      <AppDashboardPlaceholder
-        activeProfile={activeProfile}
-        onSwitchProfile={switchProfile}
-      />
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomeScreen />} />
+          <Route path="/home" element={<Navigate to="/" replace />} />
+          <Route path="/cronograma" element={<CronogramaScreen />} />
+          <Route path="/receitas" element={<ReceitasScreen />} />
+          <Route path="/usuarios" element={<UsuariosScreen />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
     );
   }
 

@@ -236,8 +236,12 @@ export class AuthService {
       throw err;
     }
 
-    // Rotação atômica em transação
-    const rotateTx = this.db.transaction(() => {
+    // Rotação atômica em transação com resultado discriminado (evita rollback em caso de conflito)
+    type RotateTxResult =
+      | { success: true; accessToken: string; refreshToken: string }
+      | { success: false; code: 'CONCURRENT_REFRESH_CONFLICT'; message: string };
+
+    const rotateTx = this.db.transaction((): RotateTxResult => {
       const newRefreshToken = generateOpaqueRefreshToken();
       const newHash = hashRefreshToken(newRefreshToken);
       const newSessionId = 'ses_' + crypto.randomUUID();
@@ -254,8 +258,8 @@ export class AuthService {
       `).run(newHash, session.id);
 
       if (updateResult.changes !== 1) {
-        // Outro processo concorrente utilizou este mesmo token exatamente no mesmo milissegundo!
-        // Trata como conflito de reuso e revoga a família
+        // Outro processo concorrente já rotacionou este mesmo token no mesmo instante!
+        // Revoga imediatamente toda a família de sessões desta conta com commit garantido na transação
         this.db.prepare(`
           UPDATE auth_sessions
           SET is_revoked = 1,
@@ -264,9 +268,12 @@ export class AuthService {
           WHERE account_id = ? AND token_family = ?
         `).run(session.account_id, session.token_family);
 
-        const err = new Error('Conflito concorrente na renovação de token. Sessão invalidada.');
-        (err as any).code = 'CONCURRENT_REFRESH_CONFLICT';
-        throw err;
+        // Retorna resultado de conflito permitindo o COMMIT da revogação da família no banco
+        return {
+          success: false,
+          code: 'CONCURRENT_REFRESH_CONFLICT',
+          message: 'Conflito concorrente na renovação de token. Todas as sessões deste dispositivo foram revogadas por segurança.',
+        };
       }
 
       // Cria a nova sessão na mesma família e para o mesmo dispositivo
@@ -284,12 +291,25 @@ export class AuthService {
       });
 
       return {
+        success: true,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
       };
     });
 
-    return rotateTx();
+    const result = rotateTx();
+
+    if (!result.success) {
+      // O commit da revogação da família já ocorreu fisicamente no banco de dados!
+      const err = new Error(result.message);
+      (err as any).code = result.code;
+      throw err;
+    }
+
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    };
   }
 
   /**

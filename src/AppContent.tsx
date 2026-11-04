@@ -99,8 +99,9 @@ export function AppContent() {
         onAddPerson={() => setOnboardingSubstep('add-person')}
         onComplete={async () => {
           setOnboardingSubstep(null);
-          if (profiles.length === 1 && profiles[0].isMainProfile) {
-            await selectActiveProfile(profiles[0].id);
+          const mainProf = profiles.find((p) => p.isMainProfile) || profiles[0];
+          if (mainProf) {
+            await selectActiveProfile(mainProf.id);
           }
         }}
       />
@@ -126,12 +127,18 @@ export function AppContent() {
         profiles={profiles}
         onBack={() => setOnboardingSubstep('profile-selection')}
         onAddAnother={() => setOnboardingSubstep('add-person')}
-        onComplete={() => setOnboardingSubstep(null)}
+        onComplete={async () => {
+          setOnboardingSubstep(null);
+          const mainProf = profiles.find((p) => p.isMainProfile) || profiles[0];
+          if (mainProf) {
+            await selectActiveProfile(mainProf.id);
+          }
+        }}
       />
     );
   }
 
-  // 4. Se já há um perfil ativo selecionado e persistido, exibe a Home e a navegação principal do aplicativo
+  // 4. Se já há um perfil ativo na sessão em memória, exibe a Home e a navegação principal do aplicativo
   if (activeProfile) {
     return (
       <Routes>
@@ -148,14 +155,13 @@ export function AppContent() {
     );
   }
 
-  // 5. Tela de Seleção de Perfil ("Entrar · [nome]")
+  // 5. Tela de Seleção de Perfil ("Entrar")
   return (
     <ProfileSelectionEntryScreen
       profiles={profiles}
       onSelectProfile={async (selected: Profile) => {
         await selectActiveProfile(selected.id);
       }}
-      onBackToOnboarding={() => setOnboardingSubstep('updated-profiles')}
     />
   );
 }

@@ -1,16 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../hooks/useApp';
 import { UserProfileSelectorRow } from '../../components/user/UserProfileSelectorRow';
 import { UserPhysicalDataCard } from '../../components/user/UserPhysicalDataCard';
 import { UserMedicalConditionsCard } from '../../components/user/UserMedicalConditionsCard';
 import { UserAllergiesCard } from '../../components/user/UserAllergiesCard';
+import { LogOutIcon } from '../../assets/icons';
 import type { Profile } from '../../types';
 
 export function UsuariosScreen() {
-  const { activeProfile, profiles, selectActiveProfile, updateProfile } = useApp();
+  const { activeProfile, profiles, selectActiveProfile, updateProfile, logout } = useApp();
+  const navigate = useNavigate();
 
   // Índice do perfil exibido
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   // Sincroniza o índice com o perfil ativo do contexto
   useEffect(() => {
@@ -107,8 +115,15 @@ export function UsuariosScreen() {
           gap: 24,
         }}
       >
-        {/* Título da tela */}
-        <header style={{ marginTop: 8 }}>
+        {/* Título da tela e Botão Sair */}
+        <header
+          style={{
+            marginTop: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <h1
             style={{
               fontFamily: 'var(--font-heading)',
@@ -121,6 +136,30 @@ export function UsuariosScreen() {
           >
             Usuários
           </h1>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 16px',
+              borderRadius: 20,
+              border: '1px solid #000000',
+              backgroundColor: '#FFFFFF',
+              color: '#000000',
+              fontSize: 14,
+              fontWeight: 600,
+              fontFamily: 'var(--font-heading)',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s ease, transform 0.1s ease',
+            }}
+            aria-label="Sair da sessão e voltar para a tela Entrar"
+          >
+            <LogOutIcon size={16} />
+            <span>Sair</span>
+          </button>
         </header>
 
         {/* Seletor de Perfil com Avatar e Navegação */}
@@ -192,6 +231,25 @@ export function UsuariosScreen() {
             <UserAllergiesCard
               allergiesText={getAllergiesText(displayedProfile.name)}
             />
+
+            {/* Ação de Sair da Sessão */}
+            <div style={{ marginTop: 8 }}>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="add-other-person-button"
+                style={{
+                  fontSize: 18,
+                  height: 56,
+                  borderColor: '#CBD5E1',
+                  color: '#475569',
+                }}
+                aria-label="Sair da sessão atual"
+              >
+                <LogOutIcon size={20} />
+                <span>Sair da sessão</span>
+              </button>
+            </div>
           </div>
         </section>
 

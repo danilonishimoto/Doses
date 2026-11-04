@@ -144,7 +144,7 @@ test('Fluxo Completo de Criação de Conta, Perfil e Abertura do Doses', async (
     assert.equal(ProfileService.getActiveProfileId(), profiles[0].id, 'ActiveProfileId deve estar persistido');
   });
 
-  await t.test('5. Fechar e reabrir o PWA (reload/restore) restaura conta e perfil ativo automaticamente', async () => {
+  await t.test('5. Fechar e reabrir a aplicação (reload/restore) restaura conta e perfis sem manter sessão ativa', async () => {
     // Simula reset de memória da SPA (como fechar o app e reabrir)
     currentAccount = null;
     activeProfile = null;
@@ -161,15 +161,17 @@ test('Fluxo Completo de Criação de Conta, Perfil e Abertura do Doses', async (
     profiles = await ProfileService.getProfilesByAccount(restoredAccount!.id);
     assert.equal(profiles.length, 1, 'Perfis da conta restaurados com sucesso');
 
-    const savedProfileId = ProfileService.getActiveProfileId();
-    assert.ok(savedProfileId, 'ProfileId ativo recuperado');
-    const matchedProfile = profiles.find((p) => p.id === savedProfileId);
-    assert.ok(matchedProfile, 'Perfil ativo encontrado na lista');
-    activeProfile = matchedProfile!;
+    // Ao reabrir ou recarregar, activeProfile permanece null e o storage da sessão ativa é limpo
+    ProfileService.clearActiveProfileId();
+    activeProfile = null;
 
     assert.equal(currentAccount.username, 'danillo_test');
-    assert.equal(activeProfile.name, 'Danillo');
-    assert.equal(activeProfile.isMainProfile, true);
+    assert.equal(activeProfile, null, 'Sessão ativa não deve ser restaurada automaticamente');
+
+    // Usuário seleciona o perfil na tela Entrar para ativar a sessão
+    await selectActiveProfile(profiles[0].id);
+    assert.equal(activeProfile?.name, 'Danillo');
+    assert.equal(activeProfile?.isMainProfile, true);
   });
 
   await t.test('6. Adição de pessoa secundária e alternância entre perfis', async () => {

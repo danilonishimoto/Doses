@@ -42,9 +42,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const userProfiles = await ProfileService.getProfilesByAccount(account.id);
       setProfiles(userProfiles);
 
-      const activeId = ProfileService.getActiveProfileId();
-      if (activeId) {
-        const found = userProfiles.find((p) => p.id === activeId);
+      if (activeProfile) {
+        const found = userProfiles.find((p) => p.id === activeProfile.id);
         if (found) {
           setActiveProfile(found);
         } else {
@@ -57,7 +56,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.error('Erro ao atualizar lista de perfis:', err);
       return [];
     }
-  }, [currentAccount]);
+  }, [currentAccount, activeProfile]);
 
   const loginAccount = useCallback(async (account: Account) => {
     AccountService.setActiveAccountId(account.id);
@@ -98,17 +97,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const userProfiles = await ProfileService.getProfilesByAccount(account.id);
           setProfiles(userProfiles);
 
-          // Verifica se há perfil ativo persistido
-          const savedProfileId = ProfileService.getActiveProfileId();
-          if (savedProfileId) {
-            const matchedProfile = userProfiles.find((p) => p.id === savedProfileId);
-            if (matchedProfile) {
-              setActiveProfile(matchedProfile);
-            } else {
-              ProfileService.clearActiveProfileId();
-              setActiveProfile(null);
-            }
-          }
+          // Separação entre cadastro persistente e sessão ativa:
+          // Ao reabrir ou recarregar a aplicação, a sessão ativa (activeProfile) NÃO é restaurada.
+          // O cadastro e os perfis permanecem salvos no IndexedDB, mas activeProfile inicia nulo,
+          // direcionando o usuário para a tela "Entrar" com os perfis cadastrados.
+          setActiveProfile(null);
+          ProfileService.clearActiveProfileId();
         }
       } catch (err) {
         console.error('Erro ao carregar dados do usuário:', err);
@@ -169,11 +163,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    AccountService.clearActiveAccount();
+    // Encerra a sessão ativa sem excluir nem redefinir dados cadastrados da conta e perfis
     ProfileService.clearActiveProfileId();
-    setCurrentAccount(null);
     setActiveProfile(null);
-    setProfiles([]);
   }, []);
 
   return (

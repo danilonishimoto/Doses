@@ -21,6 +21,8 @@ export function ProfileSelectionEntryScreen({
       const idx = profiles.findIndex((p) => p.id === initialSelectedId);
       if (idx !== -1) return idx;
     }
+    const mainIdx = profiles.findIndex((p) => p.isMainProfile);
+    if (mainIdx !== -1) return mainIdx;
     return 0;
   });
 
@@ -64,18 +66,8 @@ export function ProfileSelectionEntryScreen({
   return (
     <div className="profile-entry-screen">
       <header className="profile-entry-header">
+        <div style={{ width: 56, height: 56 }} aria-hidden="true" />
         <DosesLogo />
-        {onBackToOnboarding && (
-          <button
-            type="button"
-            onClick={onBackToOnboarding}
-            className="field-action-button"
-            style={{ fontSize: 13, color: '#4E6D93', width: 'auto', padding: '0 8px' }}
-            aria-label="Gerenciar perfis no onboarding"
-          >
-            Gerenciar perfis
-          </button>
-        )}
       </header>
 
       <main className="profile-entry-content">

@@ -14,7 +14,8 @@
     "migrate": "tsx src/db/migrate.ts",
     "test:db": "tsx src/db/testDb.ts",
     "test:concurrency": "tsx src/db/testConcurrency.ts",
-    "test:auth": "tsx src/services/authService.test.ts"
+    "test:auth": "tsx src/services/authService.test.ts",
+    "test:auth-concurrency": "tsx src/services/authConcurrency.test.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",

@@ -418,7 +418,7 @@ export class PushDispatcherService {
           {
             urgency: 'high',
             TTL: 3600,
-            topic: `dose-${occurrenceId}`,
+            topic: `dose-${occurrenceId.slice(0, 27)}`,
           }
         );
 

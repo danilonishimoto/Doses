@@ -50,3 +50,19 @@ export interface DailyMedicationItem {
   status: MedicationStatus;
   cardColor: string;
 }
+
+export interface ReceitaMedicaItem {
+  id: string;
+  profileId?: string;
+  profileName: string;
+  avatar: AvatarId;
+  specialty: string;
+  doctorName: string;
+  crm?: string;
+  clinicOrHospital?: string;
+  emissionDate: string;
+  expirationDate?: string;
+  medications: string[];
+  instructions?: string;
+  cardColor: string;
+}

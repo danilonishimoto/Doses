@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Production output
+dist/
+
+# Environment files and credentials
+.env
+.env.local
+.env.*.local
+
+# SQLite local data files
+*.db
+*.db-journal
+*.db-wal
+data/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS and Editor
+.DS_Store
+.idea/
+.vscode/

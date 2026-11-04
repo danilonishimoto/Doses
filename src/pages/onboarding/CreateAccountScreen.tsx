@@ -6,12 +6,14 @@ import { AccountService } from '../../services/account/AccountService';
 import type { Account } from '../../types';
 
 interface CreateAccountScreenProps {
+  currentAccountId?: string;
   initialUsername?: string;
   initialPassword?: string;
-  onSuccess: (account: Account) => void;
+  onSuccess: (account: Account, credentials?: { username: string; password?: string }) => void;
 }
 
 export function CreateAccountScreen({
+  currentAccountId,
   initialUsername = '',
   initialPassword = '',
   onSuccess,
@@ -53,8 +55,18 @@ export function CreateAccountScreen({
 
     try {
       setIsSubmitting(true);
-      const account = await AccountService.createAccount(trimmedUsername, password);
-      onSuccess(account);
+      let account: Account;
+      if (currentAccountId && trimmedUsername.toLowerCase() === (initialUsername || '').trim().toLowerCase()) {
+        const existing = await AccountService.getAccountById(currentAccountId);
+        if (existing) {
+          account = existing;
+        } else {
+          account = await AccountService.createAccount(trimmedUsername, password);
+        }
+      } else {
+        account = await AccountService.createAccount(trimmedUsername, password);
+      }
+      onSuccess(account, { username: trimmedUsername, password });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Falha ao criar conta. Tente novamente.';
       if (msg.toLowerCase().includes('usuário já está cadastrado')) {

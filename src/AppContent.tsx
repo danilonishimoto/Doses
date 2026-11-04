@@ -12,7 +12,7 @@ import { HomeScreen } from './pages/home/HomeScreen';
 import { CronogramaScreen } from './pages/cronograma/CronogramaScreen';
 import { ReceitasScreen } from './pages/receitas/ReceitasScreen';
 import { UsuariosScreen } from './pages/usuarios/UsuariosScreen';
-import type { Profile } from './types';
+import type { Profile, OnboardingDraft } from './types';
 
 export type FlowStep =
   | 'create-account'
@@ -35,6 +35,7 @@ export function AppContent() {
   } = useApp();
 
   const [onboardingSubstep, setOnboardingSubstep] = useState<FlowStep | null>(null);
+  const [onboardingDraft, setOnboardingDraft] = useState<OnboardingDraft>({});
 
   if (isLoading) {
     return (
@@ -46,11 +47,21 @@ export function AppContent() {
     );
   }
 
-  // 1. Se não há conta cadastrada, vai para criação de conta
-  if (!currentAccount) {
+  // 1. Se não há conta cadastrada ou se o usuário retornou à criação de conta
+  if (!currentAccount || onboardingSubstep === 'create-account') {
     return (
       <CreateAccountScreen
-        onSuccess={async (account) => {
+        initialUsername={onboardingDraft.username || currentAccount?.username}
+        initialPassword={onboardingDraft.password}
+        currentAccountId={currentAccount?.id}
+        onSuccess={async (account, creds) => {
+          if (creds) {
+            setOnboardingDraft((prev) => ({
+              ...prev,
+              username: creds.username,
+              password: creds.password,
+            }));
+          }
           await loginAccount(account);
           setOnboardingSubstep('main-profile');
         }}
@@ -58,12 +69,18 @@ export function AppContent() {
     );
   }
 
-  // 2. Se a conta existe mas ainda não possui perfil principal cadastrado
-  if (profiles.length === 0) {
+  // 2. Se a conta existe mas ainda não possui perfil principal cadastrado (ou retornou a ela)
+  if (profiles.length === 0 || onboardingSubstep === 'main-profile') {
     return (
       <MainProfileScreen
         accountId={currentAccount.id}
-        onBack={() => {}}
+        initialData={onboardingDraft.mainProfile}
+        onBack={(draft) => {
+          if (draft) {
+            setOnboardingDraft((prev) => ({ ...prev, mainProfile: draft }));
+          }
+          setOnboardingSubstep('create-account');
+        }}
         onSuccess={async () => {
           await refreshProfiles();
           setOnboardingSubstep('profile-selection');

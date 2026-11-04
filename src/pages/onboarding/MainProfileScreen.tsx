@@ -15,7 +15,14 @@ interface MainProfileScreenProps {
     weight: string;
     height: string;
   };
-  onBack: () => void;
+  onBack: (draft?: {
+    avatar: AvatarId;
+    name: string;
+    surname: string;
+    age: string;
+    weight: string;
+    height: string;
+  }) => void;
   onSuccess: (profile: Profile) => void;
 }
 
@@ -83,7 +90,18 @@ export function MainProfileScreen({
 
   return (
     <div className="onboarding-screen">
-      <OnboardingHeader onBack={onBack} />
+      <OnboardingHeader
+        onBack={() =>
+          onBack({
+            avatar,
+            name,
+            surname,
+            age,
+            weight,
+            height,
+          })
+        }
+      />
 
       <main className="onboarding-content">
         <div className="onboarding-presentation">

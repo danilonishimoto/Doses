@@ -87,7 +87,7 @@ export function ReceitaDetailModal({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#00254E',
+                color: '#000000',
               }}
             >
               <FileTextIcon size={20} />

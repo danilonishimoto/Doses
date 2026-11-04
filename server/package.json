@@ -15,7 +15,10 @@
     "test:db": "tsx src/db/testDb.ts",
     "test:concurrency": "tsx src/db/testConcurrency.ts",
     "test:auth": "tsx src/services/authService.test.ts",
-    "test:auth-concurrency": "tsx src/services/authConcurrency.test.ts"
+    "test:auth-concurrency": "tsx src/services/authConcurrency.test.ts",
+    "test:subscriptions": "tsx src/services/subscriptionService.test.ts",
+    "test:integrity": "tsx src/services/integrityAndPrivacy.test.ts",
+    "test:domain": "tsx src/services/domainApi.test.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",

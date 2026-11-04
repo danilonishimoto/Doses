@@ -331,7 +331,7 @@ export function ReceitaFormModal({
                       fontSize: 13,
                       fontFamily: 'var(--font-body)',
                       fontWeight: 600,
-                      color: '#00254E',
+                      color: '#000000',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 6,

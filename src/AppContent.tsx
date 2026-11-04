@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useApp } from './hooks/useApp';
+import { LoginScreen } from './pages/onboarding/LoginScreen';
 import { CreateAccountScreen } from './pages/onboarding/CreateAccountScreen';
 import { MainProfileScreen } from './pages/onboarding/MainProfileScreen';
 import { ProfileSelectionScreen } from './pages/onboarding/ProfileSelectionScreen';
 import { AddPersonScreen } from './pages/onboarding/AddPersonScreen';
 import { UpdatedProfilesScreen } from './pages/onboarding/UpdatedProfilesScreen';
 import { ProfileSelectionEntryScreen } from './pages/onboarding/ProfileSelectionEntryScreen';
+import { AccountService } from './services/account/AccountService';
 import { AppLayout } from './components/layout/AppLayout';
 import { HomeScreen } from './pages/home/HomeScreen';
 import { CronogramaScreen } from './pages/cronograma/CronogramaScreen';
@@ -16,6 +18,7 @@ import { UsuariosScreen } from './pages/usuarios/UsuariosScreen';
 import type { Profile, OnboardingDraft } from './types';
 
 export type FlowStep =
+  | 'login'
   | 'create-account'
   | 'main-profile'
   | 'profile-selection'
@@ -33,12 +36,28 @@ export function AppContent() {
     loginAccount,
     selectActiveProfile,
     refreshProfiles,
+    logout,
   } = useApp();
 
   const [onboardingSubstep, setOnboardingSubstep] = useState<FlowStep | null>(null);
   const [onboardingDraft, setOnboardingDraft] = useState<OnboardingDraft>({});
+  const [hasAccountsInDb, setHasAccountsInDb] = useState<boolean | null>(null);
 
-  if (isLoading) {
+  // Verifica se há alguma conta cadastrada no IndexedDB
+  useEffect(() => {
+    async function checkExistingAccounts() {
+      try {
+        const has = await AccountService.hasAnyAccount();
+        setHasAccountsInDb(has);
+      } catch (err) {
+        console.error('Erro ao verificar contas existentes:', err);
+        setHasAccountsInDb(false);
+      }
+    }
+    checkExistingAccounts();
+  }, [currentAccount]);
+
+  if (isLoading || hasAccountsInDb === null) {
     return (
       <div className="onboarding-screen" style={{ justifyContent: 'center', alignItems: 'center' }}>
         <p style={{ fontFamily: 'var(--font-heading)', fontSize: 18, color: 'var(--color-blue-input)' }}>
@@ -48,24 +67,39 @@ export function AppContent() {
     );
   }
 
-  // 1. Se não há conta cadastrada ou se o usuário retornou à criação de conta
-  if (!currentAccount || onboardingSubstep === 'create-account') {
+  // 1. Se não há conta autenticada na sessão atual
+  if (!currentAccount) {
+    // Se o usuário solicitou explicitamente criar conta OU se não há nenhuma conta no sistema
+    if (onboardingSubstep === 'create-account' || !hasAccountsInDb) {
+      return (
+        <CreateAccountScreen
+          initialUsername={onboardingDraft.username}
+          initialPassword={onboardingDraft.password}
+          onNavigateToLogin={hasAccountsInDb ? () => setOnboardingSubstep('login') : undefined}
+          onSuccess={async (account, creds) => {
+            if (creds) {
+              setOnboardingDraft((prev) => ({
+                ...prev,
+                username: creds.username,
+                password: creds.password,
+              }));
+            }
+            await loginAccount(account);
+            setHasAccountsInDb(true);
+            setOnboardingSubstep('main-profile');
+          }}
+        />
+      );
+    }
+
+    // Tela de login para contas existentes
     return (
-      <CreateAccountScreen
-        initialUsername={onboardingDraft.username || currentAccount?.username}
-        initialPassword={onboardingDraft.password}
-        currentAccountId={currentAccount?.id}
-        onSuccess={async (account, creds) => {
-          if (creds) {
-            setOnboardingDraft((prev) => ({
-              ...prev,
-              username: creds.username,
-              password: creds.password,
-            }));
-          }
+      <LoginScreen
+        onSuccess={async (account) => {
           await loginAccount(account);
-          setOnboardingSubstep('main-profile');
+          setOnboardingSubstep(null);
         }}
+        onNavigateToCreateAccount={() => setOnboardingSubstep('create-account')}
       />
     );
   }
@@ -161,6 +195,10 @@ export function AppContent() {
       profiles={profiles}
       onSelectProfile={async (selected: Profile) => {
         await selectActiveProfile(selected.id);
+      }}
+      onLogout={() => {
+        logout();
+        setOnboardingSubstep('login');
       }}
     />
   );

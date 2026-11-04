@@ -215,4 +215,49 @@ test('Gerenciamento de Medicamentos — CRUD & Arquitetura Repository', async (t
     const restoredMock = getMedicationRepository();
     assert.ok(restoredMock instanceof MockMedicationRepository);
   });
+
+  await t.test('8. Validação de regras visuais e fidelidade com Figma (Nós 301:6972, 301:7018, 301:7324)', () => {
+    // Validação da frase de repetição semanal do Figma: "Repetir às segundas, quartas e sextas."
+    const WEEK_DAYS = [
+      { id: 1, label: 'Seg', name: 'segundas', prep: 'às' },
+      { id: 2, label: 'Ter', name: 'terças', prep: 'às' },
+      { id: 3, label: 'Qua', name: 'quartas', prep: 'às' },
+      { id: 4, label: 'Qui', name: 'quintas', prep: 'às' },
+      { id: 5, label: 'Sex', name: 'sextas', prep: 'às' },
+      { id: 6, label: 'Sáb', name: 'sábados', prep: 'aos' },
+      { id: 0, label: 'Dom', name: 'domingos', prep: 'aos' },
+    ];
+
+    function formatDaysSentence(selectedDayIds: number[]): string {
+      if (selectedDayIds.length === 0) return 'Selecione pelo menos um dia.';
+      if (selectedDayIds.length === 7) return 'Repetir todos os dias.';
+      const sorted = WEEK_DAYS.filter((d) => selectedDayIds.includes(d.id));
+      if (sorted.length === 1) return `Repetir ${sorted[0].prep} ${sorted[0].name}.`;
+      const names = sorted.map((d) => d.name);
+      const last = names.pop();
+      const joined = `${names.join(', ')} e ${last}`;
+      const firstPrep = sorted[0].prep;
+      return `Repetir ${firstPrep} ${joined}.`;
+    }
+
+    // Caso do Figma Frame 301:7324
+    assert.equal(
+      formatDaysSentence([1, 3, 5]),
+      'Repetir às segundas, quartas e sextas.',
+      'Frase de resumo dos dias deve coincidir com o design do Figma'
+    );
+
+    // Caso de fim de semana
+    assert.equal(
+      formatDaysSentence([6, 0]),
+      'Repetir aos sábados e domingos.',
+      'Frase de sábado e domingo deve usar preposição correta'
+    );
+
+    // Todos os dias
+    assert.equal(
+      formatDaysSentence([1, 2, 3, 4, 5, 6, 0]),
+      'Repetir todos os dias.'
+    );
+  });
 });

@@ -87,10 +87,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (activeAccountId) {
           account = await AccountService.getAccountById(activeAccountId);
         }
-        if (!account) {
-          account = await AccountService.getFirstAccount();
-          if (account) AccountService.setActiveAccountId(account.id);
-        }
 
         if (account) {
           setCurrentAccount(account);
@@ -102,6 +98,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // O cadastro e os perfis permanecem salvos no IndexedDB, mas activeProfile inicia nulo,
           // direcionando o usuário para a tela "Entrar" com os perfis cadastrados.
           setActiveProfile(null);
+          ProfileService.clearActiveProfileId();
+        } else {
+          // Nenhuma sessão ativa no storage (ou usuário encerrou a sessão)
+          setCurrentAccount(null);
+          setActiveProfile(null);
+          setProfiles([]);
+          AccountService.clearActiveAccount();
           ProfileService.clearActiveProfileId();
         }
       } catch (err) {
@@ -163,9 +166,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    // Encerra a sessão ativa sem excluir nem redefinir dados cadastrados da conta e perfis
+    // Encerra a sessão da conta e limpa estados em memória e storage
+    // Não exclui nem modifica os dados persistidos no IndexedDB
+    AccountService.clearActiveAccount();
     ProfileService.clearActiveProfileId();
+    setCurrentAccount(null);
     setActiveProfile(null);
+    setProfiles([]);
   }, []);
 
   return (

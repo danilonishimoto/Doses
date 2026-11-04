@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import type { CreateMedicationDTO, Medication, MedicationRecurrence, RecurrenceType, UpdateMedicationDTO } from '../types/medication';
-import { CloseIcon, PlusIcon, TrashIcon } from '../../../assets/icons';
+import type {
+  CreateMedicationDTO,
+  Medication,
+  MedicationRecurrence,
+  RecurrenceType,
+  UpdateMedicationDTO,
+} from '../types/medication';
+import { OnboardingHeader } from '../../../components/ui/OnboardingHeader';
+import { PlusIcon, CloseIcon } from '../../../assets/icons';
+import { MedicationTimePickerSheet } from './MedicationTimePickerSheet';
 
 interface MedicationFormModalProps {
   isOpen: boolean;
   initialData?: Medication | null;
+  profileName?: string;
   isSubmitting?: boolean;
   onClose: () => void;
   onSubmit: (data: Omit<CreateMedicationDTO, 'profileId'> | UpdateMedicationDTO) => Promise<void>;
@@ -17,19 +26,36 @@ const COLOR_OPTIONS = [
   { value: '#E8F4F1', label: 'Verde Claro' },
 ];
 
-const DAYS_OF_WEEK = [
-  { id: 0, label: 'Dom' },
-  { id: 1, label: 'Seg' },
-  { id: 2, label: 'Ter' },
-  { id: 3, label: 'Qua' },
-  { id: 4, label: 'Qui' },
-  { id: 5, label: 'Sex' },
-  { id: 6, label: 'Sáb' },
+const WEEK_DAYS = [
+  { id: 1, label: 'Seg', name: 'segundas', prep: 'às' },
+  { id: 2, label: 'Ter', name: 'terças', prep: 'às' },
+  { id: 3, label: 'Qua', name: 'quartas', prep: 'às' },
+  { id: 4, label: 'Qui', name: 'quintas', prep: 'às' },
+  { id: 5, label: 'Sex', name: 'sextas', prep: 'às' },
+  { id: 6, label: 'Sáb', name: 'sábados', prep: 'aos' },
+  { id: 0, label: 'Dom', name: 'domingos', prep: 'aos' },
 ];
+
+function formatDaysSentence(selectedDayIds: number[]): string {
+  if (selectedDayIds.length === 0) return 'Selecione pelo menos um dia.';
+  if (selectedDayIds.length === 7) return 'Repetir todos os dias.';
+
+  const sorted = WEEK_DAYS.filter((d) => selectedDayIds.includes(d.id));
+  if (sorted.length === 1) {
+    return `Repetir ${sorted[0].prep} ${sorted[0].name}.`;
+  }
+
+  const names = sorted.map((d) => d.name);
+  const last = names.pop();
+  const joined = `${names.join(', ')} e ${last}`;
+  const firstPrep = sorted[0].prep;
+  return `Repetir ${firstPrep} ${joined}.`;
+}
 
 export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
   isOpen,
   initialData,
+  profileName = 'Camilla',
   isSubmitting = false,
   onClose,
   onSubmit,
@@ -38,14 +64,14 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
 
   const [name, setName] = useState('');
   const [schedules, setSchedules] = useState<string[]>(['08:00']);
-  const [newTime, setNewTime] = useState('12:00');
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('daily');
-  const [weeklyDays, setWeeklyDays] = useState<number[]>([1, 3, 5]); // Seg, Qua, Sex default
+  const [weeklyDays, setWeeklyDays] = useState<number[]>([1, 3, 5]); // Seg, Qua, Sex padrão do Figma
   const [customIntervalHours, setCustomIntervalHours] = useState<number>(8);
   const [instructions, setInstructions] = useState('');
   const [cardColor, setCardColor] = useState('#B4ECFB');
 
-  const [errors, setErrors] = useState<{ name?: string; schedules?: string; timeInput?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; schedules?: string }>({});
 
   useEffect(() => {
     if (initialData) {
@@ -58,8 +84,7 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
       setCardColor(initialData.cardColor || '#B4ECFB');
     } else {
       setName('');
-      setSchedules(['08:00']);
-      setNewTime('12:00');
+      setSchedules([]);
       setRecurrenceType('daily');
       setWeeklyDays([1, 3, 5]);
       setCustomIntervalHours(8);
@@ -71,20 +96,11 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleAddTime = () => {
-    setErrors((prev) => ({ ...prev, timeInput: undefined, schedules: undefined }));
-
-    if (!newTime || !/^([01]\d|2[0-3]):[0-5]\d$/.test(newTime)) {
-      setErrors((prev) => ({ ...prev, timeInput: 'Horário inválido. Utilize o formato HH:mm.' }));
-      return;
+  const handleAddTime = (timeToAdd: string) => {
+    setErrors((prev) => ({ ...prev, schedules: undefined }));
+    if (!schedules.includes(timeToAdd)) {
+      setSchedules((prev) => [...prev, timeToAdd].sort());
     }
-
-    if (schedules.includes(newTime)) {
-      setErrors((prev) => ({ ...prev, timeInput: 'Este horário já foi adicionado.' }));
-      return;
-    }
-
-    setSchedules((prev) => [...prev, newTime].sort());
   };
 
   const handleRemoveTime = (timeToRemove: string) => {
@@ -93,7 +109,7 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
 
   const toggleDayOfWeek = (dayId: number) => {
     setWeeklyDays((prev) =>
-      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId].sort()
+      prev.includes(dayId) ? prev.filter((d) => d !== dayId) : [...prev, dayId]
     );
   };
 
@@ -102,11 +118,11 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
 
     const newErrors: { name?: string; schedules?: string } = {};
     if (!name.trim()) {
-      newErrors.name = 'O nome do medicamento é obrigatório.';
+      newErrors.name = 'Informe o nome do medicamento.';
     }
 
     if (schedules.length === 0) {
-      newErrors.schedules = 'Adicione ao menos um horário para o medicamento.';
+      newErrors.schedules = 'Adicione pelo menos um horário.';
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -131,7 +147,7 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
       });
       onClose();
     } catch {
-      // Error handling is handled in the hook / parent
+      // Handled by parent
     }
   };
 
@@ -139,384 +155,503 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="medication-modal-title"
+      aria-label={isEditing ? 'Editar medicamento' : 'Adicionar medicamento'}
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '16px',
-        backdropFilter: 'blur(2px)',
+        backgroundColor: '#FFFFFF',
+        zIndex: 1050,
         overflowY: 'auto',
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) {
-          onClose();
-        }
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
       <div
         style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: 24,
-          maxWidth: 420,
           width: '100%',
-          maxHeight: '90vh',
+          maxWidth: 402,
+          minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-          overflow: 'hidden',
+          justifyContent: 'space-between',
+          backgroundColor: '#FFFFFF',
         }}
       >
-        {/* Modal Header */}
-        <div
+        {/* Top bar with back button and Doses logo */}
+        <OnboardingHeader onBack={onClose} showBack />
+
+        {/* Content Form */}
+        <form
+          onSubmit={handleSubmit}
           style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid #E5E7EB',
+            flex: 1,
             display: 'flex',
-            alignItems: 'center',
+            flexDirection: 'column',
             justifyContent: 'space-between',
+            padding: '0 24px 24px 24px',
           }}
         >
-          <h2
-            id="medication-modal-title"
-            style={{
-              margin: 0,
-              fontSize: '20px',
-              fontWeight: 700,
-              color: '#00254E',
-              fontFamily: 'Urbanist, sans-serif',
-            }}
-          >
-            {isEditing ? 'Editar medicamento' : 'Novo medicamento'}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            aria-label="Fechar"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              color: '#6B7280',
-              padding: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <CloseIcon size={22} />
-          </button>
-        </div>
-
-        {/* Modal Body Form */}
-        <form onSubmit={handleSubmit} style={{ overflowY: 'auto', padding: '20px 24px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Nome do medicamento */}
-            <div>
-              <label
-                htmlFor="med-name"
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingTop: '8px' }}>
+            {/* Apresentação (Figma nodes 301:6991 & 301:7037) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h1
                 style={{
-                  display: 'block',
-                  fontSize: '14px',
+                  margin: 0,
+                  fontFamily: 'Urbanist, sans-serif',
                   fontWeight: 600,
-                  color: '#1F2937',
-                  marginBottom: '6px',
+                  fontSize: '36px',
+                  lineHeight: '1.2',
+                  color: '#000203',
+                }}
+              >
+                {isEditing ? 'Editar medicamento' : 'Adicionar medicamento'}
+              </h1>
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: 'Open Sans, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  color: '#000203',
+                }}
+              >
+                Organize os horários de {profileName}.
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: 'Urbanist, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  color: '#565651',
+                }}
+              >
+                * Campos obrigatórios
+              </p>
+            </div>
+
+            {/* Nome do medicamento (Figma nodes 301:6995 & 301:7730) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label
+                htmlFor="medication-name-input"
+                style={{
+                  fontFamily: 'Open Sans, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  color: '#000000',
                 }}
               >
                 Nome do medicamento *
               </label>
-              <input
-                id="med-name"
-                type="text"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-                }}
-                placeholder="Ex: Vitamina D, Novalgina 500mg"
+              <div
                 style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: 12,
-                  border: errors.name ? '1.5px solid #EF4444' : '1px solid #D1D5DB',
-                  fontSize: '16px', // Prevents iOS zoom
-                  outline: 'none',
-                  boxSizing: 'border-box',
+                  height: '56px',
+                  borderRadius: '20px',
+                  border: errors.name ? '2px solid #000000' : '1px solid #4E6D93',
+                  backgroundColor: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 16px',
+                  transition: 'border-color 0.2s ease',
                 }}
-              />
+              >
+                <input
+                  id="medication-name-input"
+                  type="text"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                  }}
+                  placeholder="Digite o nome do medicamento"
+                  style={{
+                    width: '100%',
+                    border: 'none',
+                    background: 'transparent',
+                    outline: 'none',
+                    fontFamily: 'Open Sans, sans-serif',
+                    fontSize: '16px', // Previne zoom no iOS PWA
+                    color: '#000203',
+                  }}
+                />
+              </div>
               {errors.name && (
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#EF4444' }}>{errors.name}</p>
+                <p
+                  role="alert"
+                  style={{
+                    margin: 0,
+                    fontFamily: 'Urbanist, sans-serif',
+                    fontWeight: 400,
+                    fontSize: '14px',
+                    color: '#000000',
+                  }}
+                >
+                  {errors.name}
+                </p>
               )}
             </div>
 
-            {/* Horários */}
-            <div>
-              <label
+            {/* Horários (Figma nodes 301:6999, 301:7045 & 301:7735) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <span
                 style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#1F2937',
-                  marginBottom: '6px',
+                  fontFamily: 'Open Sans, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  color: '#000000',
                 }}
               >
-                Horários programados *
-              </label>
+                Horários *
+              </span>
 
-              {/* Added times list */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px',
-                  marginBottom: '10px',
-                  minHeight: '36px',
-                }}
-              >
-                {schedules.map((time) => (
-                  <span
-                    key={time}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      backgroundColor: '#E6F4FF',
-                      color: '#00254E',
-                      fontWeight: 700,
-                      fontSize: '14px',
-                      padding: '4px 10px',
-                      borderRadius: 10,
-                      border: '1px solid #BAE6FD',
-                    }}
-                  >
-                    ⏰ {time}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTime(time)}
-                      aria-label={`Remover horário ${time}`}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: 0,
-                        color: '#DC2626',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <TrashIcon size={14} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-
-              {/* Add new time row */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  type="time"
-                  value={newTime}
-                  onChange={(e) => setNewTime(e.target.value)}
+              {/* Added times chips */}
+              {schedules.length > 0 && (
+                <div
                   style={{
-                    flex: 1,
-                    padding: '10px 14px',
-                    borderRadius: 12,
-                    border: '1px solid #D1D5DB',
-                    fontSize: '16px',
-                    outline: 'none',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddTime}
-                  style={{
-                    backgroundColor: '#00254E',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: 12,
-                    padding: '10px 14px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    whiteSpace: 'nowrap',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    marginBottom: '4px',
                   }}
                 >
-                  <PlusIcon size={16} /> Adicionar
+                  {schedules.map((time) => (
+                    <div
+                      key={time}
+                      style={{
+                        height: '56px',
+                        width: '165px',
+                        maxWidth: 'calc(50% - 6px)',
+                        borderRadius: '20px',
+                        border: '1px solid #4E6D93',
+                        backgroundColor: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingLeft: '16px',
+                        paddingRight: '4px',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: 'Open Sans, sans-serif',
+                          fontWeight: 600,
+                          fontSize: '20px',
+                          color: '#000000',
+                        }}
+                      >
+                        {time}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTime(time)}
+                        aria-label={`Remover horário ${time}`}
+                        style={{
+                          width: '44px',
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#000203',
+                        }}
+                      >
+                        <CloseIcon size={20} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Botão Secundário: Adicionar horário (Figma node 301:7001) */}
+              <button
+                type="button"
+                onClick={() => setIsTimePickerOpen(true)}
+                style={{
+                  height: '56px',
+                  width: '100%',
+                  borderRadius: '20px',
+                  border: errors.schedules ? '2px solid #000000' : '1px solid #000203',
+                  backgroundColor: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  fontFamily: 'Urbanist, sans-serif',
+                  fontWeight: 600,
+                  fontSize: '20px',
+                  color: '#000203',
+                  transition: 'background-color 0.15s ease',
+                }}
+              >
+                <PlusIcon size={22} />
+                <span>Adicionar horário</span>
+              </button>
+
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: 'Urbanist, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  color: errors.schedules ? '#000000' : '#565651',
+                }}
+              >
+                {errors.schedules || 'Selecione um ou mais horários.'}
+              </p>
+            </div>
+
+            {/* Repetições (Figma nodes 301:7005 & 301:7324) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <span
+                style={{
+                  fontFamily: 'Open Sans, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  color: '#000000',
+                }}
+              >
+                Repetições
+              </span>
+
+              {/* Frequency options pills (Figma node 301:7007) */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setRecurrenceType('daily')}
+                  style={{
+                    flex: 1,
+                    height: '48px',
+                    borderRadius: '999px',
+                    border: '1px solid #000203',
+                    backgroundColor: recurrenceType === 'daily' ? '#000203' : '#FFFFFF',
+                    color: recurrenceType === 'daily' ? '#FFFFFF' : '#000203',
+                    fontFamily: 'Open Sans, sans-serif',
+                    fontWeight: recurrenceType === 'daily' ? 600 : 400,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Todos os dias
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecurrenceType('weekly')}
+                  style={{
+                    flex: 1,
+                    height: '48px',
+                    borderRadius: '999px',
+                    border: '1px solid #000203',
+                    backgroundColor: recurrenceType === 'weekly' ? '#000203' : '#FFFFFF',
+                    color: recurrenceType === 'weekly' ? '#FFFFFF' : '#000203',
+                    fontFamily: 'Open Sans, sans-serif',
+                    fontWeight: recurrenceType === 'weekly' ? 600 : 400,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Dias da semana
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecurrenceType('custom')}
+                  style={{
+                    flex: 1,
+                    height: '48px',
+                    borderRadius: '999px',
+                    border: '1px solid #000203',
+                    backgroundColor: recurrenceType === 'custom' ? '#000203' : '#FFFFFF',
+                    color: recurrenceType === 'custom' ? '#FFFFFF' : '#000203',
+                    fontFamily: 'Open Sans, sans-serif',
+                    fontWeight: recurrenceType === 'custom' ? 600 : 400,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Personalizado
                 </button>
               </div>
 
-              {errors.timeInput && (
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#EF4444' }}>
-                  {errors.timeInput}
-                </p>
-              )}
-              {errors.schedules && (
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#EF4444' }}>
-                  {errors.schedules}
-                </p>
-              )}
-            </div>
-
-            {/* Recorrência */}
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#1F2937',
-                  marginBottom: '6px',
-                }}
-              >
-                Recorrência
-              </label>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                {[
-                  { id: 'daily', label: 'Diário' },
-                  { id: 'weekly', label: 'Semanal' },
-                  { id: 'custom', label: 'Intervalo (h)' },
-                ].map((type) => {
-                  const isSelected = recurrenceType === type.id;
-                  return (
-                    <button
-                      key={type.id}
-                      type="button"
-                      onClick={() => setRecurrenceType(type.id as RecurrenceType)}
-                      style={{
-                        flex: 1,
-                        padding: '8px 10px',
-                        borderRadius: 10,
-                        border: isSelected ? '2px solid #00254E' : '1px solid #D1D5DB',
-                        backgroundColor: isSelected ? '#E6F4FF' : '#FFFFFF',
-                        color: isSelected ? '#00254E' : '#4B5563',
-                        fontWeight: isSelected ? 700 : 500,
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {type.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Weekly selector */}
+              {/* Weekly selection (Figma node 301:7373) */}
               {recurrenceType === 'weekly' && (
-                <div style={{ marginTop: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '4px' }}>
-                    Dias da semana:
-                  </span>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    {DAYS_OF_WEEK.map((d) => {
-                      const active = weeklyDays.includes(d.id);
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: 'Open Sans, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '16px',
+                      color: '#565651',
+                    }}
+                  >
+                    Selecione os dias para repetir.
+                  </p>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                    }}
+                  >
+                    {WEEK_DAYS.map((d) => {
+                      const isSelected = weeklyDays.includes(d.id);
                       return (
                         <button
                           key={d.id}
                           type="button"
                           onClick={() => toggleDayOfWeek(d.id)}
                           style={{
-                            flex: 1,
-                            padding: '6px 0',
-                            borderRadius: 8,
-                            border: active ? '1.5px solid #00254E' : '1px solid #D1D5DB',
-                            backgroundColor: active ? '#00254E' : '#FFFFFF',
-                            color: active ? '#FFFFFF' : '#374151',
-                            fontSize: '11px',
-                            fontWeight: active ? 700 : 500,
+                            height: '48px',
+                            minWidth: '46px',
+                            flex: '1 0 44px',
+                            borderRadius: '999px',
+                            border: '1px solid #000203',
+                            backgroundColor: isSelected ? '#000203' : '#FFFFFF',
+                            color: isSelected ? '#FFFFFF' : '#000203',
+                            fontFamily: 'Open Sans, sans-serif',
+                            fontWeight: isSelected ? 600 : 400,
+                            fontSize: '14px',
                             cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '4px',
+                            transition: 'all 0.15s ease',
                           }}
                         >
+                          {isSelected && '✓ '}
                           {d.label}
                         </button>
                       );
                     })}
                   </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: 'Urbanist, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      color: '#565651',
+                    }}
+                  >
+                    {formatDaysSentence(weeklyDays)}
+                  </p>
                 </div>
               )}
 
-              {/* Custom hours selector */}
+              {/* Custom Interval (Preserved functionality) */}
               {recurrenceType === 'custom' && (
-                <div style={{ marginTop: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
                   <label
-                    htmlFor="custom-interval"
-                    style={{ fontSize: '12px', color: '#6B7280', display: 'block', marginBottom: '4px' }}
+                    htmlFor="custom-hours-interval"
+                    style={{
+                      fontFamily: 'Open Sans, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '16px',
+                      color: '#565651',
+                    }}
                   >
                     Tomar a cada quantas horas?
                   </label>
-                  <input
-                    id="custom-interval"
-                    type="number"
-                    min="1"
-                    max="48"
-                    value={customIntervalHours}
-                    onChange={(e) => setCustomIntervalHours(Number(e.target.value))}
+                  <div
                     style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: 10,
-                      border: '1px solid #D1D5DB',
-                      fontSize: '15px',
+                      height: '56px',
+                      borderRadius: '20px',
+                      border: '1px solid #4E6D93',
+                      backgroundColor: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0 16px',
                     }}
-                  />
+                  >
+                    <input
+                      id="custom-hours-interval"
+                      type="number"
+                      min="1"
+                      max="48"
+                      value={customIntervalHours}
+                      onChange={(e) => setCustomIntervalHours(Number(e.target.value))}
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        background: 'transparent',
+                        outline: 'none',
+                        fontFamily: 'Open Sans, sans-serif',
+                        fontSize: '16px',
+                        color: '#000203',
+                      }}
+                    />
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontFamily: 'Urbanist, sans-serif',
+                      fontWeight: 400,
+                      fontSize: '14px',
+                      color: '#565651',
+                    }}
+                  >
+                    Repetir a cada {customIntervalHours} horas.
+                  </p>
                 </div>
               )}
             </div>
 
-            {/* Instruções / Dosagem */}
-            <div>
+            {/* Instruções / Dosagem (Preserved functionality) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label
-                htmlFor="med-instructions"
+                htmlFor="instructions-field"
                 style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#1F2937',
-                  marginBottom: '6px',
+                  fontFamily: 'Open Sans, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  color: '#000000',
                 }}
               >
                 Instruções e dosagem (opcional)
               </label>
               <textarea
-                id="med-instructions"
+                id="instructions-field"
                 rows={2}
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
                 placeholder="Ex: 1 cápsula em jejum com água"
                 style={{
                   width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: 12,
-                  border: '1px solid #D1D5DB',
+                  borderRadius: '20px',
+                  border: '1px solid #4E6D93',
+                  backgroundColor: '#FFFFFF',
+                  padding: '14px 16px',
+                  fontFamily: 'Open Sans, sans-serif',
                   fontSize: '16px',
+                  color: '#000203',
                   outline: 'none',
                   boxSizing: 'border-box',
                   resize: 'none',
-                  fontFamily: 'Open Sans, sans-serif',
                 }}
               />
             </div>
 
-            {/* Cor do card */}
-            <div>
+            {/* Cor de identificação (Preserved functionality) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <span
                 style={{
-                  display: 'block',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#1F2937',
-                  marginBottom: '6px',
+                  fontFamily: 'Open Sans, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  color: '#000000',
                 }}
               >
                 Cor de identificação
               </span>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
                 {COLOR_OPTIONS.map((c) => {
                   const isSelected = cardColor === c.value;
                   return (
@@ -524,13 +659,14 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
                       key={c.value}
                       type="button"
                       onClick={() => setCardColor(c.value)}
-                      title={c.label}
+                      aria-label={`Cor ${c.label}`}
                       style={{
-                        width: '36px',
-                        height: '36px',
+                        width: '42px',
+                        height: '42px',
                         borderRadius: '50%',
                         backgroundColor: c.value,
-                        border: isSelected ? '3px solid #00254E' : '1px solid rgba(0, 0, 0, 0.15)',
+                        border: isSelected ? '3px solid #000203' : '1px solid rgba(0, 0, 0, 0.2)',
+                        boxShadow: isSelected ? '0 0 0 2px #FFFFFF inset' : 'none',
                         cursor: 'pointer',
                         transform: isSelected ? 'scale(1.1)' : 'scale(1)',
                         transition: 'transform 0.15s ease',
@@ -542,46 +678,74 @@ export const MedicationFormModal: React.FC<MedicationFormModalProps> = ({
             </div>
           </div>
 
-          {/* Form Actions */}
-          <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
+          {/* Conclusão (Figma nodes 301:7012 & 301:7067) */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              paddingTop: '32px',
+              paddingBottom: '20px',
+            }}
+          >
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="primary-action-button"
+              style={{
+                width: '100%',
+                minHeight: '96px',
+                borderRadius: '20px',
+                backgroundColor: '#000203',
+                color: '#FFFFFF',
+                fontFamily: 'Urbanist, sans-serif',
+                fontWeight: 700,
+                fontSize: '20px',
+                border: 'none',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                opacity: isSubmitting ? 0.6 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px',
+              }}
+            >
+              {isSubmitting
+                ? 'Salvando...'
+                : isEditing
+                ? 'Salvar alterações'
+                : 'Salvar medicamento'}
+            </button>
+
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
               style={{
-                flex: 1,
-                padding: '14px 16px',
-                borderRadius: 14,
-                border: '1px solid #D1D5DB',
-                backgroundColor: '#FFFFFF',
-                color: '#374151',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                fontFamily: 'Open Sans, sans-serif',
+                fontWeight: 400,
                 fontSize: '16px',
-                fontWeight: 600,
+                color: '#000203',
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
               }}
             >
               Cancelar
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{
-                flex: 1,
-                padding: '14px 16px',
-                borderRadius: 14,
-                border: 'none',
-                backgroundColor: '#00254E',
-                color: '#FFFFFF',
-                fontSize: '16px',
-                fontWeight: 600,
-                cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting ? 0.7 : 1,
-              }}
-            >
-              {isSubmitting ? 'Salvando...' : isEditing ? 'Atualizar' : 'Salvar'}
-            </button>
           </div>
         </form>
+
+        {/* Mobile Time Picker Sheet */}
+        <MedicationTimePickerSheet
+          isOpen={isTimePickerOpen}
+          onClose={() => setIsTimePickerOpen(false)}
+          onSelectTime={handleAddTime}
+        />
       </div>
     </div>
   );

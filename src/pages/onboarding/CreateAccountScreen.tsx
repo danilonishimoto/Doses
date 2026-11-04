@@ -10,6 +10,7 @@ interface CreateAccountScreenProps {
   initialUsername?: string;
   initialPassword?: string;
   onSuccess: (account: Account, credentials?: { username: string; password?: string }) => void;
+  onNavigateToLogin?: () => void;
 }
 
 export function CreateAccountScreen({
@@ -17,6 +18,7 @@ export function CreateAccountScreen({
   initialUsername = '',
   initialPassword = '',
   onSuccess,
+  onNavigateToLogin,
 }: CreateAccountScreenProps) {
   const [username, setUsername] = useState(initialUsername);
   const [password, setPassword] = useState(initialPassword);
@@ -81,7 +83,7 @@ export function CreateAccountScreen({
 
   return (
     <div className="onboarding-screen">
-      <OnboardingHeader showBack={false} />
+      <OnboardingHeader showBack={Boolean(onNavigateToLogin)} onBack={onNavigateToLogin} />
 
       <main className="onboarding-content">
         <div className="onboarding-presentation">
@@ -157,7 +159,7 @@ export function CreateAccountScreen({
         </form>
       </main>
 
-      <footer className="onboarding-footer">
+      <footer className="onboarding-footer" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <button
           type="submit"
           form="create-account-form"
@@ -166,6 +168,28 @@ export function CreateAccountScreen({
         >
           {isSubmitting ? 'Criando conta...' : 'Continuar'}
         </button>
+
+        {onNavigateToLogin && (
+          <button
+            type="button"
+            onClick={onNavigateToLogin}
+            style={{
+              height: 44,
+              width: '100%',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'Open Sans, sans-serif',
+              fontSize: 16,
+              color: '#000203',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            Já possui uma conta?&nbsp;<strong>Entrar</strong>
+          </button>
+        )}
       </footer>
     </div>
   );

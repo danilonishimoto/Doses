@@ -7,6 +7,7 @@ interface ProfileSelectionEntryScreenProps {
   profiles: Profile[];
   initialSelectedId?: string;
   onSelectProfile: (profile: Profile) => void;
+  onLogout?: () => void;
   onBackToOnboarding?: () => void;
 }
 
@@ -14,6 +15,7 @@ export function ProfileSelectionEntryScreen({
   profiles,
   initialSelectedId,
   onSelectProfile,
+  onLogout,
   onBackToOnboarding,
 }: ProfileSelectionEntryScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(() => {
@@ -124,7 +126,7 @@ export function ProfileSelectionEntryScreen({
         </div>
       </main>
 
-      <footer className="onboarding-footer">
+      <footer className="onboarding-footer" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <button
           type="button"
           onClick={handleConfirm}
@@ -133,6 +135,30 @@ export function ProfileSelectionEntryScreen({
         >
           Acessar medicamentos de {currentProfile.name}
         </button>
+
+        {onLogout && (
+          <button
+            type="button"
+            onClick={onLogout}
+            aria-label="Encerrar sessão"
+            style={{
+              height: 44,
+              width: '100%',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'Open Sans, sans-serif',
+              fontSize: 16,
+              fontWeight: 400,
+              color: '#000203',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            Encerrar sessão
+          </button>
+        )}
       </footer>
     </div>
   );

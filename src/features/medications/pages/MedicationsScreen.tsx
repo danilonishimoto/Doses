@@ -4,13 +4,14 @@ import { useMedications } from '../hooks/useMedications';
 import { MedicationManagementCard } from '../components/MedicationManagementCard';
 import { MedicationFormModal } from '../components/MedicationFormModal';
 import { DeleteConfirmationDialog } from '../components/DeleteConfirmationDialog';
-import { AvatarRenderer } from '../../../components/profile/AvatarRenderer';
-import { PlusIcon } from '../../../assets/icons';
+import { MedicamentosTabIcon } from '../../../assets/icons';
 import type { CreateMedicationDTO, Medication, UpdateMedicationDTO } from '../types/medication';
 
 export function MedicationsScreen() {
   const { activeProfile } = useApp();
   const profileId = activeProfile?.id;
+  const profileName = activeProfile?.name || 'Camilla';
+  const profileAvatar = activeProfile?.avatar || 'young-woman';
 
   const {
     medications,
@@ -23,7 +24,7 @@ export function MedicationsScreen() {
     deleteMedication,
   } = useMedications({ profileId });
 
-  // Modal states
+  // Modal / Form states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMedication, setEditingMedication] = useState<Medication | null>(null);
 
@@ -80,6 +81,10 @@ export function MedicationsScreen() {
     }
   };
 
+  const activeCount = medications.length;
+  const activeCountLabel =
+    activeCount === 1 ? '1 medicamento ativo' : `${activeCount} medicamentos ativos`;
+
   return (
     <div
       style={{
@@ -88,90 +93,45 @@ export function MedicationsScreen() {
         alignItems: 'center',
         width: '100%',
         minHeight: '100vh',
-        backgroundColor: '#F8FAFC',
+        backgroundColor: '#FFFFFF',
       }}
     >
       <div
         style={{
           width: '100%',
           maxWidth: 402,
-          padding: '24px 20px 120px 20px',
+          padding: '20px 24px 130px 24px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          gap: '24px',
         }}
       >
-        {/* Header Section */}
-        <header
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: '26px',
-                fontWeight: 700,
-                color: '#00254E',
-                fontFamily: 'Urbanist, sans-serif',
-              }}
-            >
-              Medicamentos
-            </h1>
-            {activeProfile && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  marginTop: '4px',
-                }}
-              >
-                <div style={{ width: 20, height: 20, borderRadius: '50%', overflow: 'hidden' }}>
-                  <AvatarRenderer avatar={activeProfile.avatar} size={20} />
-                </div>
-                <span
-                  style={{
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: '#4B5563',
-                    fontFamily: 'Open Sans, sans-serif',
-                  }}
-                >
-                  Perfil de {activeProfile.name}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Add New Button */}
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            aria-label="Cadastrar novo medicamento"
+        {/* Apresentação (Figma node 301:6716 & 301:6888) */}
+        <header style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h1
             style={{
-              backgroundColor: '#00254E',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: 14,
-              padding: '10px 14px',
-              fontSize: '14px',
+              margin: 0,
+              fontFamily: 'Urbanist, sans-serif',
               fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 2px 6px rgba(0, 37, 78, 0.2)',
+              fontSize: '36px',
+              lineHeight: '1.2',
+              color: '#000203',
             }}
           >
-            <PlusIcon size={18} />
-            <span>Novo</span>
-          </button>
+            Medicamentos
+          </h1>
+          <p
+            style={{
+              margin: 0,
+              fontFamily: 'Open Sans, sans-serif',
+              fontWeight: 400,
+              fontSize: '16px',
+              color: '#565651',
+            }}
+          >
+            Perfil de {profileName}
+          </p>
         </header>
 
         {/* Error notification banner */}
@@ -181,27 +141,27 @@ export function MedicationsScreen() {
             style={{
               backgroundColor: '#FEE2E2',
               border: '1px solid #F87171',
-              borderRadius: 14,
-              padding: '12px 16px',
+              borderRadius: '20px',
+              padding: '14px 18px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '12px',
             }}
           >
-            <div style={{ color: '#991B1B', fontSize: '14px', fontWeight: 500 }}>
+            <div style={{ color: '#991B1B', fontSize: '14px', fontFamily: 'Open Sans, sans-serif' }}>
               {error}
             </div>
             <button
               type="button"
               onClick={() => refresh()}
               style={{
-                backgroundColor: '#DC2626',
+                backgroundColor: '#000203',
                 color: '#FFFFFF',
                 border: 'none',
-                borderRadius: 8,
-                padding: '6px 10px',
-                fontSize: '12px',
+                borderRadius: '12px',
+                padding: '8px 12px',
+                fontSize: '13px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
@@ -214,126 +174,184 @@ export function MedicationsScreen() {
 
         {/* Content State: Loading, Empty or List */}
         {isLoading ? (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              paddingTop: '20px',
-            }}
-          >
-            {[1, 2, 3].map((n) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '16px' }}>
+            {[1, 2].map((n) => (
               <div
                 key={n}
                 style={{
-                  height: '110px',
-                  backgroundColor: '#E2E8F0',
-                  borderRadius: 20,
+                  height: '140px',
+                  backgroundColor: '#F1F5F9',
+                  borderRadius: '20px',
                   animation: 'pulse 1.5s infinite ease-in-out',
                 }}
               />
             ))}
           </div>
         ) : medications.length === 0 ? (
-          /* Empty State */
+          /* Estado Vazio (Figma node 301:6880 - Medicamentos · Estado vazio · Doses) */
           <div
             style={{
-              textAlign: 'center',
-              padding: '48px 16px',
-              backgroundColor: '#FFFFFF',
-              borderRadius: 24,
-              boxShadow: '0 2px 8px rgba(0, 37, 78, 0.05)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '12px',
+              gap: '28px',
+              paddingTop: '40px',
+              paddingBottom: '20px',
+              width: '100%',
             }}
           >
+            {/* Símbolo de medicamentos */}
             <div
               style={{
-                width: 64,
-                height: 64,
+                width: 112,
+                height: 112,
                 borderRadius: '50%',
                 backgroundColor: '#E6F4FF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '32px',
               }}
             >
-              💊
+              <MedicamentosTabIcon active size={56} />
             </div>
-            <h2
+
+            {/* Mensagem de acolhimento (Figma node 301:6894) */}
+            <div
               style={{
-                margin: 0,
-                fontSize: '18px',
-                fontWeight: 700,
-                color: '#00254E',
-                fontFamily: 'Urbanist, sans-serif',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                textAlign: 'center',
+                width: '100%',
               }}
             >
-              Nenhum medicamento cadastrado
-            </h2>
-            <p
-              style={{
-                margin: 0,
-                fontSize: '14px',
-                color: '#6B7280',
-                maxWidth: 280,
-                lineHeight: '1.4',
-                fontFamily: 'Open Sans, sans-serif',
-              }}
-            >
-              Organize os horários e dosagens de {activeProfile?.name || 'seu perfil'}.
-            </p>
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: 'Urbanist, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '32px',
+                  color: '#000000',
+                  lineHeight: 'normal',
+                }}
+              >
+                Tudo começa por aqui
+              </h2>
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: 'Open Sans, sans-serif',
+                  fontWeight: 400,
+                  fontSize: '16px',
+                  color: '#000203',
+                  lineHeight: 'normal',
+                }}
+              >
+                Ainda não há medicamentos no perfil de {profileName}. Adicione o primeiro para
+                organizar seus horários.
+              </p>
+            </div>
+
+            {/* Doses / Botão principal (Figma node 301:6891 DosesBotaoPrincipal) */}
             <button
               type="button"
               onClick={handleOpenCreate}
+              className="primary-action-button"
               style={{
-                marginTop: '8px',
-                backgroundColor: '#00254E',
+                width: '100%',
+                minHeight: '96px',
+                borderRadius: '20px',
+                backgroundColor: '#000203',
                 color: '#FFFFFF',
+                fontFamily: 'Urbanist, sans-serif',
+                fontWeight: 700,
+                fontSize: '20px',
                 border: 'none',
-                borderRadius: 14,
-                padding: '12px 20px',
-                fontSize: '15px',
-                fontWeight: 600,
                 cursor: 'pointer',
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                justifyContent: 'center',
+                padding: '20px',
+                textAlign: 'center',
               }}
             >
-              <PlusIcon size={18} /> Adicionar medicamento
+              Adicionar primeiro medicamento
             </button>
           </div>
         ) : (
-          /* Medication List */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {medications.map((medication) => (
-              <MedicationManagementCard
-                key={medication.id}
-                medication={medication}
-                onEdit={handleOpenEdit}
-                onDelete={handleOpenDelete}
-              />
-            ))}
+          /* Listagem de medicamentos ativos (Figma node 301:6719) */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+            {/* Quantidade */}
+            <p
+              style={{
+                margin: 0,
+                fontFamily: 'Open Sans, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                color: '#565651',
+              }}
+            >
+              {activeCountLabel}
+            </p>
+
+            {/* Lista de medicamentos com cartões e ações */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {medications.map((medication) => (
+                <MedicationManagementCard
+                  key={medication.id}
+                  medication={medication}
+                  profileName={profileName}
+                  profileAvatar={profileAvatar}
+                  onEdit={handleOpenEdit}
+                  onDelete={handleOpenDelete}
+                />
+              ))}
+            </div>
+
+            {/* Doses / Botão principal: Adicionar medicamento (Figma node 301:6707) */}
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="primary-action-button"
+              style={{
+                width: '100%',
+                minHeight: '96px',
+                borderRadius: '20px',
+                backgroundColor: '#000203',
+                color: '#FFFFFF',
+                fontFamily: 'Urbanist, sans-serif',
+                fontWeight: 700,
+                fontSize: '20px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px',
+                textAlign: 'center',
+                marginTop: '8px',
+              }}
+            >
+              Adicionar medicamento
+            </button>
           </div>
         )}
 
-        {/* Form Modal (Create or Edit) */}
+        {/* Modal / Tela de Cadastro e Edição (Figma nodes 301:6972 & 301:7018) */}
         <MedicationFormModal
           isOpen={isFormOpen}
           initialData={editingMedication}
+          profileName={profileName}
           isSubmitting={isSubmitting}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleFormSubmit}
         />
 
-        {/* Delete Confirmation Dialog */}
+        {/* Confirmação de Remoção (Figma node 301:7073 / 301:7246) */}
         <DeleteConfirmationDialog
           isOpen={isDeleteDialogOpen}
           medication={medicationToDelete}
+          profileName={profileName}
           isSubmitting={isSubmitting}
           onCancel={() => {
             setIsDeleteDialogOpen(false);
@@ -342,7 +360,7 @@ export function MedicationsScreen() {
           onConfirm={handleConfirmDelete}
         />
 
-        {/* Floating Toast notification */}
+        {/* Toast flutuante de sucesso */}
         {toastMessage && (
           <div
             style={{
@@ -350,14 +368,15 @@ export function MedicationsScreen() {
               bottom: '100px',
               left: '50%',
               transform: 'translateX(-50%)',
-              backgroundColor: '#00254E',
+              backgroundColor: '#000203',
               color: '#FFFFFF',
-              padding: '12px 20px',
+              padding: '12px 24px',
               borderRadius: '24px',
-              fontSize: '14px',
+              fontSize: '15px',
+              fontFamily: 'Urbanist, sans-serif',
               fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(0, 37, 78, 0.25)',
-              zIndex: 1100,
+              boxShadow: '0 4px 16px rgba(0, 37, 78, 0.25)',
+              zIndex: 1300,
               display: 'flex',
               alignItems: 'center',
               gap: '8px',

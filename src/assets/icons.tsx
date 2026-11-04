@@ -1,61 +1,29 @@
-export function DosesLogo({ width = 74, height = 58 }: { width?: number; height?: number }) {
+import dosesLogoSrc from './logo-doses.png';
+
+export function DosesLogo({
+  width = 74,
+  height = 58,
+  className,
+}: {
+  width?: number | string;
+  height?: number | string;
+  className?: string;
+}) {
   return (
-    <div
+    <img
+      src={dosesLogoSrc}
+      alt="Doses"
+      width={typeof width === 'number' ? width : undefined}
+      height={typeof height === 'number' ? height : undefined}
+      className={className}
       style={{
         width,
         height,
-        position: 'relative',
-        overflow: 'visible',
+        objectFit: 'contain',
         display: 'inline-block',
+        verticalAlign: 'middle',
       }}
-      aria-label="Doses"
-      role="img"
-    >
-      <span
-        style={{
-          fontFamily: "'Pacifico', cursive",
-          fontSize: '33.07px',
-          color: '#000000',
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          lineHeight: 'normal',
-          whiteSpace: 'nowrap',
-          userSelect: 'none',
-        }}
-      >
-        doses
-      </span>
-      <div
-        style={{
-          position: 'absolute',
-          left: '19.67px',
-          top: '31.79px',
-          width: '9.353px',
-          height: '7.761px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-        }}
-      >
-        <div style={{ transform: 'rotate(140.7deg)' }}>
-          <svg
-            width="11.9154"
-            height="2.0613"
-            viewBox="0 0 11.9154 2.0613"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M0 0.825C4.58866 0.825 7.22741 1.75042 11.75 0.825"
-              stroke="#000000"
-              strokeWidth="1.65"
-            />
-          </svg>
-        </div>
-      </div>
-    </div>
+    />
   );
 }
 
@@ -487,28 +455,14 @@ export function MedicamentosTabIcon({ active = false, size = 38 }: { active?: bo
   const strokeWidth = active ? 2.40625 : 1.8;
   return (
     <svg width={size} height={size} viewBox="0 0 38.5 38.5" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
-      <rect
-        x="10.5"
-        y="14.25"
-        width="17.5"
-        height="10"
-        rx="5"
-        transform="rotate(-45 19.25 19.25)"
-        stroke="black"
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <line
-        x1="19.25"
-        y1="12.2"
-        x2="19.25"
-        y2="26.3"
-        transform="rotate(-45 19.25 19.25)"
-        stroke="black"
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
+      <g transform="translate(7.7, 7.7)">
+        <path
+          d="M8.18089 8.18089L14.9191 14.9191M14.9191 14.9191L10.1061 19.7321C9.6653 20.1819 9.1397 20.5399 8.5597 20.7853C7.9797 21.0307 7.3568 21.1587 6.72703 21.1619C6.09725 21.165 5.4731 21.0433 4.89065 20.8038C4.3082 20.5643 3.77901 20.2116 3.33369 19.7663C2.88837 19.321 2.53574 18.7918 2.2962 18.2094C2.05667 17.6269 1.93497 17.0027 1.93815 16.373C1.94133 15.7432 2.06933 15.1203 2.31473 14.5403C2.56014 13.9603 2.9181 13.4347 3.36789 12.9939L8.18089 8.18089L12.9939 3.36789C13.4347 2.9181 13.9603 2.56014 14.5403 2.31473C15.1203 2.06933 15.7432 1.94133 16.373 1.93815C17.0027 1.93497 17.6269 2.05667 18.2094 2.2962C18.7918 2.53574 19.321 2.88837 19.7663 3.33369C20.2116 3.77901 20.5643 4.3082 20.8038 4.89065C21.0433 5.4731 21.165 6.09725 21.1619 6.72703C21.1587 7.3568 21.0307 7.9797 20.7853 8.5597C20.5399 9.1397 20.1819 9.6653 19.7321 10.1061L14.9191 14.9191Z"
+          stroke="black"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+      </g>
     </svg>
   );
 }

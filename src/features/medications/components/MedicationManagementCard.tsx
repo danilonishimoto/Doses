@@ -1,14 +1,26 @@
 import React from 'react';
 import type { Medication } from '../types/medication';
+import { AvatarRenderer } from '../../../components/profile/AvatarRenderer';
 import { EditIcon, TrashIcon } from '../../../assets/icons';
+import type { AvatarId } from '../../../types';
 
 interface MedicationManagementCardProps {
   medication: Medication;
+  profileName?: string;
+  profileAvatar?: AvatarId;
   onEdit: (medication: Medication) => void;
   onDelete: (medication: Medication) => void;
 }
 
-const DAYS_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const WEEK_DAY_NAMES: Record<number, string> = {
+  1: 'Seg',
+  2: 'Ter',
+  3: 'Qua',
+  4: 'Qui',
+  5: 'Sex',
+  6: 'Sáb',
+  0: 'Dom',
+};
 
 function formatRecurrence(medication: Medication): string {
   const { recurrence } = medication;
@@ -17,7 +29,10 @@ function formatRecurrence(medication: Medication): string {
   }
   if (recurrence.type === 'weekly') {
     if (recurrence.daysOfWeek && recurrence.daysOfWeek.length > 0) {
-      return recurrence.daysOfWeek.map((d) => DAYS_NAMES[d] || d).join(', ');
+      if (recurrence.daysOfWeek.length === 7) return 'Todos os dias';
+      return recurrence.daysOfWeek
+        .map((d) => WEEK_DAY_NAMES[d] || String(d))
+        .join(', ');
     }
     if (recurrence.interval && recurrence.interval > 1) {
       return `A cada ${recurrence.interval} semanas`;
@@ -30,167 +45,181 @@ function formatRecurrence(medication: Medication): string {
     }
     return 'Personalizado';
   }
-  return 'Diário';
+  return 'Todos os dias';
 }
 
 export const MedicationManagementCard: React.FC<MedicationManagementCardProps> = ({
   medication,
+  profileName = 'Camilla',
+  profileAvatar = 'young-woman',
   onEdit,
   onDelete,
 }) => {
-  const cardColor = medication.cardColor || '#B4ECFB';
+  const cardColor = medication.cardColor || '#E6F4FF';
   const recurrenceLabel = formatRecurrence(medication);
+  const formattedSchedules = medication.schedules.length > 0
+    ? medication.schedules.join(' · ')
+    : '--:--';
 
   return (
     <article
       data-testid={`medication-card-${medication.id}`}
       style={{
-        backgroundColor: cardColor,
-        borderRadius: 20,
-        padding: '16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
-        boxShadow: '0 2px 8px rgba(0, 37, 78, 0.08)',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        width: '100%',
       }}
     >
-      {/* Top Header: Title & Recurrence badge */}
+      {/* Card Content (Figma node 301:6722) */}
       <div
         style={{
+          backgroundColor: cardColor,
+          borderRadius: '20px',
+          minHeight: '120px',
+          padding: '16px',
+          boxSizing: 'border-box',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: '8px',
+          flexDirection: 'column',
+          gap: '4px',
+          width: '100%',
         }}
       >
-        <div style={{ flex: 1 }}>
-          <h3
-            style={{
-              margin: 0,
-              fontSize: '18px',
-              fontWeight: 700,
-              color: '#00254E',
-              fontFamily: 'Open Sans, sans-serif',
-              lineHeight: '1.25',
-              wordBreak: 'break-word',
-            }}
-          >
-            {medication.name}
-          </h3>
+        {/* Profile Info Row (Figma node I301:6722;219:43) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+          <div style={{ width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden' }}>
+            <AvatarRenderer avatar={profileAvatar} size={16} />
+          </div>
           <span
             style={{
-              display: 'inline-block',
-              marginTop: '4px',
-              fontSize: '12px',
+              fontFamily: 'Open Sans, sans-serif',
               fontWeight: 600,
-              color: '#004080',
-              backgroundColor: 'rgba(255, 255, 255, 0.7)',
-              padding: '2px 8px',
-              borderRadius: '12px',
+              fontSize: '14px',
+              color: '#000000',
+              lineHeight: 'normal',
             }}
           >
-            {recurrenceLabel}
+            {profileName}
           </span>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <button
-            type="button"
-            onClick={() => onEdit(medication)}
-            aria-label={`Editar ${medication.name}`}
-            style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid rgba(0, 37, 78, 0.15)',
-              borderRadius: '10px',
-              width: '36px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#00254E',
-              transition: 'background-color 0.15s ease',
-            }}
-          >
-            <EditIcon size={18} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onDelete(medication)}
-            aria-label={`Excluir ${medication.name}`}
-            style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid rgba(220, 38, 38, 0.2)',
-              borderRadius: '10px',
-              width: '36px',
-              height: '36px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#DC2626',
-              transition: 'background-color 0.15s ease',
-            }}
-          >
-            <TrashIcon size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* Schedules row */}
-      <div>
-        <div
+        {/* Medication Name (Figma node I301:6722;214:108) */}
+        <h3
           style={{
-            fontSize: '12px',
-            fontWeight: 600,
-            color: '#4B5563',
-            marginBottom: '4px',
-          }}
-        >
-          Horários previstos:
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-          {medication.schedules.map((time, idx) => (
-            <span
-              key={`${time}-${idx}`}
-              style={{
-                backgroundColor: '#FFFFFF',
-                color: '#00254E',
-                fontSize: '13px',
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: '8px',
-                border: '1px solid rgba(0, 37, 78, 0.12)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              ⏰ {time}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Instructions / Dosage */}
-      {medication.instructions && (
-        <div
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.6)',
-            padding: '8px 12px',
-            borderRadius: '10px',
-            fontSize: '13px',
-            color: '#1F2937',
-            lineHeight: '1.4',
+            margin: 0,
             fontFamily: 'Open Sans, sans-serif',
+            fontWeight: 600,
+            fontSize: '18px',
+            color: '#000000',
+            lineHeight: 'normal',
+            wordBreak: 'break-word',
           }}
         >
-          <strong style={{ color: '#00254E' }}>Instruções:</strong> {medication.instructions}
-        </div>
-      )}
+          {medication.name}
+        </h3>
+
+        {/* Schedules (Figma node I301:6722;214:109) */}
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'Open Sans, sans-serif',
+            fontWeight: 600,
+            fontSize: '24px',
+            color: '#000000',
+            lineHeight: 'normal',
+          }}
+        >
+          {formattedSchedules}
+        </p>
+
+        {/* Recurrence (Figma node I301:6722;214:110) */}
+        <p
+          style={{
+            margin: 0,
+            fontFamily: 'Open Sans, sans-serif',
+            fontWeight: 400,
+            fontSize: '16px',
+            color: '#000000',
+            lineHeight: 'normal',
+          }}
+        >
+          {recurrenceLabel}
+        </p>
+
+        {/* Instructions / Dosage (if present) */}
+        {medication.instructions && (
+          <p
+            style={{
+              margin: '4px 0 0',
+              fontFamily: 'Open Sans, sans-serif',
+              fontWeight: 400,
+              fontSize: '14px',
+              color: '#4E6D93',
+              lineHeight: 'normal',
+            }}
+          >
+            {medication.instructions}
+          </p>
+        )}
+      </div>
+
+      {/* Management Actions (Figma node 301:6756) */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: '8px',
+          width: '100%',
+        }}
+      >
+        {/* Editar medicamento */}
+        <button
+          type="button"
+          onClick={() => onEdit(medication)}
+          aria-label={`Editar ${medication.name}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            height: '48px',
+            padding: '0 12px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#000000',
+            fontFamily: 'Open Sans, sans-serif',
+            fontSize: '16px',
+            fontWeight: 400,
+          }}
+        >
+          <EditIcon size={18} />
+          <span>Editar</span>
+        </button>
+
+        {/* Remover medicamento */}
+        <button
+          type="button"
+          onClick={() => onDelete(medication)}
+          aria-label={`Remover ${medication.name}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            height: '48px',
+            padding: '0 12px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#000000',
+            fontFamily: 'Open Sans, sans-serif',
+            fontSize: '16px',
+            fontWeight: 400,
+          }}
+        >
+          <TrashIcon size={18} />
+          <span>Remover</span>
+        </button>
+      </div>
     </article>
   );
 };

@@ -203,4 +203,104 @@ test('Fluxo Completo de Criação de Conta, Perfil e Abertura do Doses', async (
     assert.equal(activeProfile?.name, 'Danillo');
     assert.equal(ProfileService.getActiveProfileId(), main.id);
   });
+
+  await t.test('7. Encerrar sessão limpa a sessão ativa mas preserva os dados no IndexedDB', async () => {
+    // Simula logout / encerrar sessão
+    AccountService.clearActiveAccount();
+    ProfileService.clearActiveProfileId();
+    currentAccount = null;
+    activeProfile = null;
+    profiles = [];
+
+    assert.equal(currentAccount, null, 'currentAccount deve ser nulo');
+    assert.equal(activeProfile, null, 'activeProfile deve ser nulo');
+    assert.equal(AccountService.getActiveAccountId(), null, 'Storage de conta ativa deve estar limpo');
+
+    // Verifica que as contas e perfis continuam preservados no IndexedDB
+    const hasAccounts = await AccountService.hasAnyAccount();
+    assert.equal(hasAccounts, true, 'Conta deve continuar cadastrada no IndexedDB');
+
+    const savedAccounts = await db.accounts.toArray();
+    assert.equal(savedAccounts.length, 1, 'Conta original deve existir');
+    assert.equal(savedAccounts[0].username, 'danillo_test');
+
+    const savedProfiles = await db.profiles.toArray();
+    assert.equal(savedProfiles.length, 2, 'Os 2 perfis devem continuar salvos no IndexedDB');
+
+    // Ao recarregar a aplicação após logout, NÃO deve restaurar sessão indevidamente
+    const activeAccountIdAfterReload = AccountService.getActiveAccountId();
+    assert.equal(activeAccountIdAfterReload, null, 'Não deve restaurar sessão encerrada');
+  });
+
+  await t.test('8. Tela de login: validação de credenciais e reentrada na conta', async () => {
+    // Tentativa com senha errada
+    await assert.rejects(
+      async () => {
+        await AccountService.authenticate('danillo_test', 'senha_errada');
+      },
+      /Usuário ou senha incorretos/,
+      'Deve recusar senha incorreta'
+    );
+
+    // Tentativa com usuário inexistente
+    await assert.rejects(
+      async () => {
+        await AccountService.authenticate('usuario_inexistente', 'senha123');
+      },
+      /Usuário ou senha incorretos/,
+      'Deve recusar usuário inexistente'
+    );
+
+    // Sucesso: credenciais corretas
+    const loggedAccount = await AccountService.authenticate('danillo_test', 'senha123');
+    assert.ok(loggedAccount, 'Deve autenticar com sucesso');
+    assert.equal(loggedAccount.username, 'danillo_test');
+
+    await loginAccount(loggedAccount);
+    assert.equal(currentAccount?.username, 'danillo_test');
+    assert.equal(profiles.length, 2, 'Perfis anteriores (Danillo e José) devem ser restaurados');
+
+    // Permite selecionar perfil novamente
+    const selected = await selectActiveProfile(profiles[0].id);
+    assert.equal(selected, true);
+    assert.ok(activeProfile);
+  });
+
+  await t.test('9. Criar nova conta a partir da tela de login preserva o fluxo existente', async () => {
+    // Usuário encerra a sessão novamente
+    AccountService.clearActiveAccount();
+    ProfileService.clearActiveProfileId();
+    currentAccount = null;
+    activeProfile = null;
+    profiles = [];
+
+    // Cria uma segunda conta independente
+    const secondAccount = await AccountService.createAccount('mariana_test', 'senha456');
+    assert.ok(secondAccount.id);
+    assert.equal(secondAccount.username, 'mariana_test');
+
+    await loginAccount(secondAccount);
+    assert.equal(currentAccount?.username, 'mariana_test');
+    assert.equal(profiles.length, 0, 'Nova conta inicia sem perfis');
+
+    // Cria perfil para a segunda conta
+    const marianaProfile = await ProfileService.createProfile({
+      accountId: secondAccount.id,
+      name: 'Mariana',
+      surname: 'Souza',
+      age: 28,
+      weight: 60,
+      height: 168,
+      avatar: 'young-woman',
+      isMainProfile: true,
+    });
+
+    await refreshProfiles();
+    assert.equal(profiles.length, 1);
+    assert.equal(profiles[0].name, 'Mariana');
+
+    // Ambas as contas continuam no IndexedDB de forma isolada
+    const allAccounts = await db.accounts.toArray();
+    assert.equal(allAccounts.length, 2, 'Devem existir 2 contas no banco');
+  });
 });

@@ -39,6 +39,34 @@ export class AccountService {
     return db.accounts.where('username').equalsIgnoreCase(username.trim()).first();
   }
 
+  static async authenticate(username: string, plainPassword: string): Promise<Account> {
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      throw new Error('Informe o nome de usuário.');
+    }
+    if (!plainPassword) {
+      throw new Error('Informe a senha.');
+    }
+
+    const account = await this.getAccountByUsername(trimmedUsername);
+    if (!account) {
+      throw new Error('Usuário ou senha incorretos.');
+    }
+
+    const { hash } = await hashPassword(plainPassword, account.salt);
+    if (hash !== account.passwordHash) {
+      throw new Error('Usuário ou senha incorretos.');
+    }
+
+    this.setActiveAccountId(account.id);
+    return account;
+  }
+
+  static async hasAnyAccount(): Promise<boolean> {
+    const count = await db.accounts.count();
+    return count > 0;
+  }
+
   static async getFirstAccount(): Promise<Account | undefined> {
     return db.accounts.orderBy('createdAt').first();
   }

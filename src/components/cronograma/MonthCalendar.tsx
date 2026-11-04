@@ -378,7 +378,7 @@ export function MonthCalendar({
             border: 'none',
             padding: 0,
             cursor: 'pointer',
-            color: '#00254E',
+            color: '#000000',
             fontWeight: 600,
             fontSize: 14,
             fontFamily: 'var(--font-body)',

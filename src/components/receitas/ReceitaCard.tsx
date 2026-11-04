@@ -129,7 +129,7 @@ export function ReceitaCard({ receita, onAccess }: ReceitaCardProps) {
                 key={`${med}-${idx}`}
                 style={{
                   backgroundColor: '#FFFFFF',
-                  border: '1px solid #00254E',
+                  border: '1px solid #000000',
                   borderRadius: 999,
                   padding: '3px 10px',
                   fontSize: 13,

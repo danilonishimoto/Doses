@@ -93,20 +93,24 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
                   margin: 0,
                   cursor: 'pointer',
                   flex: 1,
+                  minWidth: 0,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   outline: 'none',
-                  height: 68,
+                  height: '100%',
                 }}
               >
                 <div
                   style={{
                     backgroundColor: isActive ? '#C8E7FF' : 'transparent',
-                    borderRadius: 10,
-                    width: 68,
-                    height: 68,
+                    borderRadius: 12,
+                    width: '100%',
+                    maxWidth: 70,
+                    height: 66,
+                    padding: '3px 2px 2px 2px',
+                    boxSizing: 'border-box',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -121,6 +125,7 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      flexShrink: 0,
                     }}
                   >
                     {item.tab === 'home' && <HomeTabIcon active={isActive} size={38} />}
@@ -151,12 +156,17 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
                   <span
                     style={{
                       fontFamily: 'var(--font-body)',
-                      fontWeight: isActive ? 700 : 400,
-                      fontSize: 12,
-                      lineHeight: '20px',
+                      fontWeight: isActive ? 400 : 400,
+                      fontSize: item.tab === 'medicamentos' ? 9.5 : 10,
+                      letterSpacing: item.tab === 'medicamentos' ? '-0.25px' : '-0.05px',
+                      lineHeight: '14px',
+                      marginTop: 1,
                       color: '#000000',
                       textAlign: 'center',
                       whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '100%',
                     }}
                   >
                     {item.label}

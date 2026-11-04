@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS profiles (
     version INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+    UNIQUE (id, account_id)
 );
 
 -- 3. Medicamentos
@@ -38,8 +39,8 @@ CREATE TABLE IF NOT EXISTS medications (
     version INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (profile_id, account_id) REFERENCES profiles(id, account_id) ON DELETE CASCADE,
+    UNIQUE (id, profile_id, account_id)
 );
 
 -- 4. Horários dos Medicamentos
@@ -54,9 +55,8 @@ CREATE TABLE IF NOT EXISTS medication_times (
     version INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (medication_id) REFERENCES medications(id) ON DELETE CASCADE,
-    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (medication_id, profile_id, account_id) REFERENCES medications(id, profile_id, account_id) ON DELETE CASCADE,
+    UNIQUE (id, profile_id, account_id)
 );
 
 -- 5. Inscrições de Notificações Web Push (Múltiplos Dispositivos)
@@ -68,10 +68,12 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
     p256dh TEXT NOT NULL,
     auth TEXT NOT NULL,
     user_agent TEXT NOT NULL DEFAULT '',
+    device_name TEXT NOT NULL DEFAULT '',
     hide_medication_names INTEGER NOT NULL DEFAULT 1,
     is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     last_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );
 
@@ -119,9 +121,8 @@ CREATE TABLE IF NOT EXISTS dose_occurrences (
     last_error TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (medication_time_id) REFERENCES medication_times(id) ON DELETE RESTRICT,
-    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (medication_time_id, profile_id, account_id) REFERENCES medication_times(id, profile_id, account_id) ON DELETE RESTRICT,
+    UNIQUE (id, profile_id, account_id)
 );
 
 -- 8. Confirmações de Doses Tomadas (Log Append-Only de Eventos Clínicos)
@@ -134,9 +135,7 @@ CREATE TABLE IF NOT EXISTS dose_confirmations (
     confirmed_at TEXT NOT NULL,           -- Timestamp registrado no momento da tomada
     source TEXT NOT NULL DEFAULT 'NOTIFICATION_ACTION', -- 'NOTIFICATION_ACTION' | 'APP_UI'
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (occurrence_id) REFERENCES dose_occurrences(id) ON DELETE RESTRICT,
-    FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+    FOREIGN KEY (occurrence_id, profile_id, account_id) REFERENCES dose_occurrences(id, profile_id, account_id) ON DELETE RESTRICT
 );
 
 -- ÍNDICES DE PERFORMANCE E INTEGRIDADE

@@ -138,7 +138,7 @@ export function UserPhysicalDataCard({ profile, onSave }: UserPhysicalDataCardPr
               fontFamily: 'var(--font-body)',
               fontSize: 13,
               fontWeight: 600,
-              color: '#00254E',
+              color: '#000000',
               padding: '4px 8px',
               borderRadius: 8,
               textDecoration: 'underline',

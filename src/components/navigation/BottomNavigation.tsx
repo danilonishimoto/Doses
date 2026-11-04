@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HomeTabIcon, CronogramaTabIcon, ReceitasTabIcon } from '../../assets/icons';
+import { HomeTabIcon, CronogramaTabIcon, ReceitasTabIcon, MedicamentosTabIcon } from '../../assets/icons';
 import { AvatarRenderer } from '../profile/AvatarRenderer';
 import { useApp } from '../../hooks/useApp';
 import type { NavigationTab } from '../../types';
@@ -18,6 +18,7 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
     const pathname = location.pathname;
     if (pathname === '/cronograma') return 'cronograma';
     if (pathname === '/receitas') return 'receitas';
+    if (pathname === '/medicamentos') return 'medicamentos';
     if (pathname === '/usuarios') return 'usuarios';
     return 'home';
   };
@@ -28,6 +29,7 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
     { tab: 'home', label: 'Home', path: '/' },
     { tab: 'cronograma', label: 'Cronograma', path: '/cronograma' },
     { tab: 'receitas', label: 'Receitas', path: '/receitas' },
+    { tab: 'medicamentos', label: 'Medicamentos', path: '/medicamentos' },
     { tab: 'usuarios', label: 'Usuários', path: '/usuarios' },
   ];
 
@@ -124,6 +126,7 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
                     {item.tab === 'home' && <HomeTabIcon active={isActive} size={38} />}
                     {item.tab === 'cronograma' && <CronogramaTabIcon active={isActive} size={38} />}
                     {item.tab === 'receitas' && <ReceitasTabIcon active={isActive} size={38} />}
+                    {item.tab === 'medicamentos' && <MedicamentosTabIcon active={isActive} size={38} />}
                     {item.tab === 'usuarios' && (
                       <div
                         style={{

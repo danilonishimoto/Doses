@@ -11,6 +11,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { HomeScreen } from './pages/home/HomeScreen';
 import { CronogramaScreen } from './pages/cronograma/CronogramaScreen';
 import { ReceitasScreen } from './pages/receitas/ReceitasScreen';
+import { MedicationsScreen } from './features/medications/pages/MedicationsScreen';
 import { UsuariosScreen } from './pages/usuarios/UsuariosScreen';
 import type { Profile, OnboardingDraft } from './types';
 
@@ -139,6 +140,7 @@ export function AppContent() {
           <Route path="/home" element={<Navigate to="/" replace />} />
           <Route path="/cronograma" element={<CronogramaScreen />} />
           <Route path="/receitas" element={<ReceitasScreen />} />
+          <Route path="/medicamentos" element={<MedicationsScreen />} />
           <Route path="/usuarios" element={<UsuariosScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

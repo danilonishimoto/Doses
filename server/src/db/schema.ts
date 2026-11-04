@@ -83,8 +83,11 @@ CREATE TABLE IF NOT EXISTS auth_sessions (
     refresh_token_hash TEXT UNIQUE NOT NULL,
     token_family TEXT NOT NULL, -- Para invalidação em cadeia caso haja reuso suspeito
     is_revoked INTEGER NOT NULL DEFAULT 0,
+    revoked_at TEXT,
+    replaced_by_hash TEXT,
     expires_at INTEGER NOT NULL, -- Unix epoch em segundos
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );
 

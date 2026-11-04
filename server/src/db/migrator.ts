@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { migration as migration001 } from './migrations/001_initial_schema.js';
 import { migration as migration002 } from './migrations/002_add_auth_sessions_family_index.js';
 import { migration as migration003 } from './migrations/003_add_lease_token_to_occurrences.js';
+import { migration as migration004 } from './migrations/004_enhance_auth_sessions.js';
 
 export interface Migration {
   version: string;
@@ -13,6 +14,7 @@ export const ALL_MIGRATIONS: Migration[] = [
   migration001,
   migration002,
   migration003,
+  migration004,
 ];
 
 export function runVersionedMigrations(db: Database.Database): { applied: string[]; skipped: string[] } {

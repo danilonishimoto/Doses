@@ -3,6 +3,8 @@ import { env } from './config/env.js';
 import { configureVapid } from './config/vapid.js';
 import { runMigrations } from './db/migrate.js';
 import { getDatabase, closeDatabase } from './db/connection.js';
+import { AuthService } from './services/authService.js';
+import { handleAuthRoutes } from './api/authRoutes.js';
 
 console.log('=====================================================');
 console.log('  Doses Backend - Notificações Nativas Web Push (Dev)');
@@ -11,7 +13,10 @@ console.log('=====================================================');
 // 1. Executa migrações na inicialização
 runMigrations();
 
-// 2. Configura chaves VAPID
+// 2. Instancia o serviço de autenticação
+const authService = new AuthService();
+
+// 3. Configura chaves VAPID
 const vapidConfigured = configureVapid();
 if (!vapidConfigured) {
   console.warn('[Aviso] Servidor rodando sem chaves VAPID ativas. Execute `npm run generate-vapid` para configurar.');
@@ -64,6 +69,16 @@ const server = http.createServer((req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ publicKey: env.VAPID_PUBLIC_KEY }));
+    return;
+  }
+
+  // Rotas de Autenticação (/api/v1/auth/*)
+  if (url.pathname.startsWith('/api/v1/auth/')) {
+    handleAuthRoutes(req, res, authService).catch((err) => {
+      console.error('[HTTP Auth Error]', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ statusCode: 500, error: 'Internal Server Error' }));
+    });
     return;
   }
 

@@ -35,7 +35,7 @@ export interface OnboardingDraft {
   };
 }
 
-export type NavigationTab = 'home' | 'cronograma' | 'receitas' | 'usuarios';
+export type NavigationTab = 'home' | 'cronograma' | 'receitas' | 'medicamentos' | 'usuarios';
 
 export type MedicationStatus = 'completed' | 'pending';
 

@@ -13,7 +13,8 @@
     "generate-vapid": "tsx scripts/generate-vapid.ts",
     "migrate": "tsx src/db/migrate.ts",
     "test:db": "tsx src/db/testDb.ts",
-    "test:concurrency": "tsx src/db/testConcurrency.ts"
+    "test:concurrency": "tsx src/db/testConcurrency.ts",
+    "test:auth": "tsx src/services/authService.test.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",

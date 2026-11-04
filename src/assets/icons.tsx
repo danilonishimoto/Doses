@@ -483,6 +483,36 @@ export function ReceitasTabIcon({ active = false, size = 38 }: { active?: boolea
   );
 }
 
+export function MedicamentosTabIcon({ active = false, size = 38 }: { active?: boolean; size?: number }) {
+  const strokeWidth = active ? 2.40625 : 1.8;
+  return (
+    <svg width={size} height={size} viewBox="0 0 38.5 38.5" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ display: 'block' }}>
+      <rect
+        x="10.5"
+        y="14.25"
+        width="17.5"
+        height="10"
+        rx="5"
+        transform="rotate(-45 19.25 19.25)"
+        stroke="black"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line
+        x1="19.25"
+        y1="12.2"
+        x2="19.25"
+        y2="26.3"
+        transform="rotate(-45 19.25 19.25)"
+        stroke="black"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function DosesAiSphere({ size = 150, className }: { size?: number; className?: string }) {
   return (
     <svg

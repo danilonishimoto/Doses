@@ -18,7 +18,12 @@
     "test:auth-concurrency": "tsx src/services/authConcurrency.test.ts",
     "test:subscriptions": "tsx src/services/subscriptionService.test.ts",
     "test:integrity": "tsx src/services/integrityAndPrivacy.test.ts",
-    "test:domain": "tsx src/services/domainApi.test.ts"
+    "test:domain": "tsx src/services/domainApi.test.ts",
+    "test:temporal": "tsx src/utils/temporalResolver.test.ts",
+    "test:recurrence": "tsx src/utils/recurrenceValidator.test.ts",
+    "test:generator": "tsx src/services/occurrenceGenerator.test.ts",
+    "test:dispatch": "tsx src/services/pushDispatcherService.test.ts",
+    "dispatch:once": "tsx scripts/dispatchOnce.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",

@@ -28,6 +28,7 @@ export class AccountService {
 
     await db.accounts.add(account);
     this.setActiveAccountId(account.id);
+    await syncBackendAuth(trimmedUsername, plainPassword);
     return account;
   }
 
@@ -59,6 +60,7 @@ export class AccountService {
     }
 
     this.setActiveAccountId(account.id);
+    await syncBackendAuth(trimmedUsername, plainPassword);
     return account;
   }
 
@@ -87,6 +89,51 @@ export class AccountService {
   static clearActiveAccount(): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('doses_active_account_id');
+      localStorage.removeItem('doses_access_token');
+      localStorage.removeItem('doses_refresh_token');
+      localStorage.removeItem('doses_backend_account_id');
+      localStorage.removeItem('doses_push_subscribed');
+      localStorage.removeItem('doses_push_subscription_id');
     }
+  }
+}
+
+async function syncBackendAuth(username: string, plainPassword: string) {
+  if (typeof window === 'undefined' || typeof fetch === 'undefined') return;
+  try {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password: plainPassword }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.accessToken && typeof localStorage !== 'undefined') {
+        localStorage.setItem('doses_access_token', data.accessToken);
+        localStorage.setItem('doses_refresh_token', data.refreshToken);
+        localStorage.setItem('doses_backend_account_id', data.account.id);
+      }
+      return data;
+    }
+
+    if (res.status === 401 || res.status === 404 || res.status === 400) {
+      const regRes = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password: plainPassword }),
+      });
+      if (regRes.ok) {
+        const data = await regRes.json();
+        if (data.accessToken && typeof localStorage !== 'undefined') {
+          localStorage.setItem('doses_access_token', data.accessToken);
+          localStorage.setItem('doses_refresh_token', data.refreshToken);
+          localStorage.setItem('doses_backend_account_id', data.account.id);
+        }
+        return data;
+      }
+    }
+  } catch (err) {
+    console.warn('[AccountService] Backend offline, prosseguindo com autenticação local IndexedDB.');
   }
 }

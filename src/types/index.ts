@@ -6,7 +6,24 @@ export interface Account {
   createdAt: string;
 }
 
-export type AvatarId = 'young-woman' | 'senior-person' | 'doguinho-fofo';
+export type AvatarId =
+  | 'young-woman'
+  | 'senior-person'
+  | 'doguinho-fofo'
+  | 'profile-01'
+  | 'profile-02'
+  | 'profile-03'
+  | 'profile-04'
+  | 'profile-05'
+  | 'profile-06'
+  | 'profile-07'
+  | 'profile-08'
+  | 'profile-09'
+  | 'profile-10'
+  | 'profile-11'
+  | 'profile-12'
+  | 'profile-13'
+  | 'profile-14';
 
 export interface Profile {
   id: string;

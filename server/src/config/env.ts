@@ -43,4 +43,14 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+// Validação imediata do fuso horário IANA configurado
+try {
+  new Intl.DateTimeFormat(undefined, { timeZone: parsed.data.APP_TIMEZONE });
+} catch {
+  console.error(
+    `[Configuração Inválida] APP_TIMEZONE="${parsed.data.APP_TIMEZONE}" não é um identificador de fuso horário IANA válido.`
+  );
+  process.exit(1);
+}
+
 export const env = parsed.data;

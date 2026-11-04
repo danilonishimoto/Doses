@@ -110,7 +110,7 @@ export function ReceitasScreen() {
         className="receitas-content"
         style={{
           width: '100%',
-          padding: '24px 24px 140px 24px',
+          padding: '24px 24px calc(200px + env(safe-area-inset-bottom, 0px)) 24px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',

@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -49,6 +58,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['/push-sw.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
@@ -87,7 +97,7 @@ export default defineConfig({
       },
       devOptions: {
         enabled: true,
-        type: 'module',
+        type: 'classic',
       },
     }),
   ],

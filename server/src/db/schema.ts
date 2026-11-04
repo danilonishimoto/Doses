@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS dose_occurrences (
     timezone TEXT NOT NULL DEFAULT 'America/Sao_Paulo',
     scheduled_at_utc INTEGER NOT NULL,  -- Instante UTC exato em milissegundos
     schedule_version INTEGER NOT NULL DEFAULT 1,
+    temporal_version INTEGER NOT NULL DEFAULT 1, -- Versão da configuração temporal vigente
     status TEXT NOT NULL CHECK(status IN (
         'SCHEDULED',      -- Aguardando chegada do horário programado
         'DISPATCHING',    -- Em processamento com lease ativo
@@ -138,15 +139,46 @@ CREATE TABLE IF NOT EXISTS dose_confirmations (
     FOREIGN KEY (occurrence_id, profile_id, account_id) REFERENCES dose_occurrences(id, profile_id, account_id) ON DELETE RESTRICT
 );
 
+-- 9. Configuração Temporal do Sistema (Fonte de Verdade no SQLite)
+CREATE TABLE IF NOT EXISTS app_temporal_settings (
+    id TEXT PRIMARY KEY,                 -- Identificador fixo: 'current'
+    timezone TEXT NOT NULL,             -- Ex: 'America/Sao_Paulo'
+    temporal_version INTEGER NOT NULL DEFAULT 1, -- Incrementado a cada reconciliação
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 10. Rastreamento Individual de Envios Web Push por Dispositivo (Etapa 3C)
+CREATE TABLE IF NOT EXISTS dose_occurrence_dispatches (
+    id TEXT PRIMARY KEY,
+    occurrence_id TEXT NOT NULL,
+    subscription_id TEXT NOT NULL,
+    account_id TEXT NOT NULL,
+    device_name TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL CHECK(status IN ('SENT', 'FAILED')),
+    status_code INTEGER,
+    error_message TEXT,
+    attempt_count INTEGER NOT NULL DEFAULT 1,
+    sent_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (occurrence_id) REFERENCES dose_occurrences(id) ON DELETE CASCADE,
+    FOREIGN KEY (subscription_id) REFERENCES push_subscriptions(id) ON DELETE CASCADE,
+    UNIQUE (occurrence_id, subscription_id)
+);
+
 -- ÍNDICES DE PERFORMANCE E INTEGRIDADE
 CREATE UNIQUE INDEX IF NOT EXISTS idx_occurrences_slot 
-ON dose_occurrences(medication_time_id, scheduled_date, scheduled_time, schedule_version);
+ON dose_occurrences(medication_time_id, scheduled_date, scheduled_time, schedule_version, temporal_version);
 
 CREATE INDEX IF NOT EXISTS idx_occurrences_dispatch_search 
 ON dose_occurrences(status, scheduled_at_utc, lease_until);
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_account 
 ON push_subscriptions(account_id, is_active);
+
+CREATE INDEX IF NOT EXISTS idx_occurrence_dispatches_lookup
+ON dose_occurrence_dispatches(occurrence_id, subscription_id, status);
 
 CREATE INDEX IF NOT EXISTS idx_auth_sessions_device 
 ON auth_sessions(account_id, device_id, is_revoked);

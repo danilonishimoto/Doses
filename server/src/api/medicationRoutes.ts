@@ -4,13 +4,28 @@ import { MedicationService } from '../services/medicationService.js';
 import { MedicationTimeService } from '../services/medicationTimeService.js';
 import { AuthService } from '../services/authService.js';
 import { authenticateToken, AuthenticatedRequest } from '../middlewares/authMiddleware.js';
+import { validateRecurrence } from '../utils/recurrenceValidator.js';
 
 const TimeRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+
+const RecurrenceZodSchema = z.string()
+  .trim()
+  .max(100)
+  .superRefine((val, ctx) => {
+    const res = validateRecurrence(val);
+    if (!res.valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: res.error || 'Formato de recorrência inválido.',
+      });
+    }
+  });
 
 const UpdateMedicationSchema = z.object({
   name: z.string().trim().min(1, 'O nome não pode ser vazio.').max(150).optional(),
   dosage: z.string().trim().max(100).optional(),
-  recurrence: z.string().trim().max(50).optional(),
+  recurrence: RecurrenceZodSchema.optional(),
+  expectedVersion: z.number().int().positive().optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização.',
 });
@@ -25,6 +40,7 @@ const UpdateMedicationTimeSchema = z.object({
   time: z.string({ required_error: 'O horário é obrigatório.' })
     .trim()
     .regex(TimeRegex, 'O horário deve estar no formato 24h "HH:mm" (ex: 08:00, 14:30).'),
+  expectedVersion: z.number().int().positive().optional(),
 });
 
 function sendJson(res: http.ServerResponse, statusCode: number, data: any) {
@@ -122,8 +138,8 @@ export async function handleMedicationRoutes(
           return true;
         }
 
-        const updated = medicationService.updateMedication(accountId, medicationId, parsed.data);
-        if (!updated) {
+        const result = medicationService.updateMedication(accountId, medicationId, parsed.data);
+        if (result.error === 'NOT_FOUND') {
           sendJson(res, 404, {
             statusCode: 404,
             error: 'Not Found',
@@ -132,10 +148,29 @@ export async function handleMedicationRoutes(
           return true;
         }
 
+        if (result.error === 'VERSION_CONFLICT') {
+          sendJson(res, 409, {
+            statusCode: 409,
+            error: 'Conflict',
+            message: 'Conflito de versão: o medicamento foi alterado concorrentemente.',
+          });
+          return true;
+        }
+
+        if (result.error === 'INVALID_RECURRENCE') {
+          sendJson(res, 400, {
+            statusCode: 400,
+            error: 'Bad Request',
+            message: result.errorMessage || 'Formato de recorrência inválido.',
+          });
+          return true;
+        }
+
         sendJson(res, 200, {
           statusCode: 200,
           message: 'Medicamento atualizado com sucesso.',
-          medication: updated,
+          medication: result.medication,
+          cancelledOccurrencesCount: result.cancelledOccurrencesCount,
         });
         return true;
       } catch (err: any) {
@@ -294,10 +329,20 @@ export async function handleMedicationRoutes(
           return true;
         }
 
+        if (result.error === 'VERSION_CONFLICT') {
+          sendJson(res, 409, {
+            statusCode: 409,
+            error: 'Conflict',
+            message: 'Conflito de versão: o horário foi alterado concorrentemente.',
+          });
+          return true;
+        }
+
         sendJson(res, 200, {
           statusCode: 200,
           message: 'Horário atualizado com sucesso.',
           time: result.time,
+          cancelledOccurrencesCount: result.cancelledOccurrencesCount,
         });
         return true;
       } catch (err: any) {

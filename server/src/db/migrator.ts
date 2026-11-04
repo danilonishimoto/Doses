@@ -5,6 +5,8 @@ import { migration as migration003 } from './migrations/003_add_lease_token_to_o
 import { migration as migration004 } from './migrations/004_enhance_auth_sessions.js';
 import { migration as migration005 } from './migrations/005_enhance_push_subscriptions.js';
 import { migration as migration006 } from './migrations/006_composite_foreign_keys.js';
+import { migration as migration007 } from './migrations/007_temporal_configuration_and_versioning.js';
+import { migration as migration008 } from './migrations/008_occurrence_dispatches_tracking.js';
 
 export interface Migration {
   version: string;
@@ -20,6 +22,8 @@ export const ALL_MIGRATIONS: Migration[] = [
   migration004,
   migration005,
   migration006,
+  migration007,
+  migration008,
 ];
 
 export function runVersionedMigrations(db: Database.Database): { applied: string[]; skipped: string[] } {

@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import React from 'react';
+(globalThis as any).React = React;
 import { FIGMA_RECEITAS_MOCK, getReceitasMock } from '../../mocks/receitas/receitas.mock';
 import type { ReceitaMedicaItem, Profile } from '../../types';
 
@@ -124,5 +126,37 @@ test('Seção de Receitas Médicas — Doses', async (t) => {
         `A cor ${r.cardColor} deve pertencer à paleta de cards do Figma`
       );
     }
+  });
+
+  await t.test('5. Botão flutuante de adicionar receita posicionado acima da navbar e com safe-area', async () => {
+    const { FloatingAddButton } = await import('../../components/receitas/FloatingAddButton');
+    let clicked = false;
+    const vnode = FloatingAddButton({
+      onClick: () => {
+        clicked = true;
+      },
+    });
+
+    assert.ok(vnode, 'Deve renderizar o botão flutuante');
+    assert.equal(vnode.props['aria-label'], 'Adicionar nova receita');
+    assert.equal(vnode.props.className, 'floating-add-recipe-btn');
+
+    const style = vnode.props.style;
+    assert.equal(style.position, 'fixed', 'Deve ser botão com posicionamento fixo');
+    assert.ok(
+      style.bottom.includes('116px') && style.bottom.includes('safe-area-inset-bottom'),
+      `O posicionamento inferior deve ficar acima da navbar (96px) com safe area: ${style.bottom}`
+    );
+    assert.ok(
+      style.right.includes('max(24px') && style.right.includes('50% - 201px'),
+      `O posicionamento horizontal deve ser responsivo ao frame 402px centralizado: ${style.right}`
+    );
+    assert.equal(style.width, 70);
+    assert.equal(style.height, 70);
+    assert.equal(style.borderRadius, '50%');
+
+    // Testa chamada de clique
+    vnode.props.onClick();
+    assert.equal(clicked, true, 'O evento onClick deve ser disparado ao tocar no botão');
   });
 });

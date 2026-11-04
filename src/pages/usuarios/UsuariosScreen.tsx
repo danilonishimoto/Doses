@@ -5,6 +5,7 @@ import { UserProfileSelectorRow } from '../../components/user/UserProfileSelecto
 import { UserPhysicalDataCard } from '../../components/user/UserPhysicalDataCard';
 import { UserMedicalConditionsCard } from '../../components/user/UserMedicalConditionsCard';
 import { UserAllergiesCard } from '../../components/user/UserAllergiesCard';
+import { UserNotificationsCard } from '../../components/user/UserNotificationsCard';
 import { LogOutIcon } from '../../assets/icons';
 import type { Profile } from '../../types';
 
@@ -216,18 +217,21 @@ export function UsuariosScreen() {
               gap: 12,
             }}
           >
-            {/* Card 1: Dados físicos com suporte a edição e persistência */}
+            {/* Card 1: Notificações Web Push */}
+            <UserNotificationsCard />
+
+            {/* Card 2: Dados físicos com suporte a edição e persistência */}
             <UserPhysicalDataCard
               profile={displayedProfile}
               onSave={handleSavePhysicalData}
             />
 
-            {/* Card 2: Condições médicas */}
+            {/* Card 3: Condições médicas */}
             <UserMedicalConditionsCard
               conditionsText={getConditionsText(displayedProfile.name)}
             />
 
-            {/* Card 3: Alergias */}
+            {/* Card 4: Alergias */}
             <UserAllergiesCard
               allergiesText={getAllergiesText(displayedProfile.name)}
             />

@@ -20,6 +20,13 @@ export interface CreateMedicationTimeInput {
 
 export interface UpdateMedicationTimeInput {
   time: string; // Formato 'HH:mm'
+  expectedVersion?: number;
+}
+
+export interface UpdateMedicationTimeResult {
+  time?: MedicationTimeDto;
+  error?: 'NOT_FOUND' | 'DUPLICATE_TIME' | 'VERSION_CONFLICT';
+  cancelledOccurrencesCount?: number;
 }
 
 export class MedicationTimeService {
@@ -112,10 +119,15 @@ export class MedicationTimeService {
     accountId: string,
     timeId: string,
     input: UpdateMedicationTimeInput
-  ): { time?: MedicationTimeDto; error?: 'NOT_FOUND' | 'DUPLICATE_TIME' } {
+  ): UpdateMedicationTimeResult {
     const existing = this.getMedicationTimeById(accountId, timeId);
     if (!existing) {
       return { error: 'NOT_FOUND' };
+    }
+
+    // Controle otimista de versão
+    if (input.expectedVersion !== undefined && existing.version !== input.expectedVersion) {
+      return { error: 'VERSION_CONFLICT' };
     }
 
     const cleanTime = input.time.trim();
@@ -131,16 +143,46 @@ export class MedicationTimeService {
       return { error: 'DUPLICATE_TIME' };
     }
 
-    this.db.prepare(`
-      UPDATE medication_times
-      SET time = ?,
-          version = version + 1,
-          updated_at = datetime('now')
-      WHERE id = ? AND account_id = ? AND is_deleted = 0
-    `).run(cleanTime, timeId, accountId);
+    const timeChanged = cleanTime !== existing.time;
+    const nowMs = Date.now();
+    let cancelledCount = 0;
+
+    const runTx = this.db.transaction(() => {
+      // 1. Atualiza o horário com incremento de versão
+      this.db.prepare(`
+        UPDATE medication_times
+        SET time = ?,
+            version = version + 1,
+            updated_at = datetime('now')
+        WHERE id = ? AND account_id = ? AND is_deleted = 0
+      `).run(cleanTime, timeId, accountId);
+
+      // 2. Se o horário foi alterado, cancela atomicamente ocorrências futuras antigas elegíveis
+      if (timeChanged) {
+        const cancelStmt = this.db.prepare(`
+          UPDATE dose_occurrences
+          SET status = 'CANCELLED',
+              updated_at = datetime('now')
+          WHERE account_id = ?
+            AND medication_time_id = ?
+            AND (
+              status IN ('SCHEDULED', 'DISPATCH_FAILED')
+              OR (status = 'DISPATCHING' AND (lease_until IS NULL OR lease_until <= ?))
+            )
+        `);
+
+        const result = cancelStmt.run(accountId, timeId, nowMs);
+        cancelledCount = result.changes;
+      }
+    });
+
+    runTx();
 
     const updated = this.getMedicationTimeById(accountId, timeId);
-    return { time: updated! };
+    return {
+      time: updated!,
+      cancelledOccurrencesCount: cancelledCount,
+    };
   }
 
   deleteMedicationTime(accountId: string, timeId: string): SoftDeleteResult {

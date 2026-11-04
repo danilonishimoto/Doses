@@ -4,6 +4,20 @@ import { ProfileService } from '../services/profileService.js';
 import { MedicationService } from '../services/medicationService.js';
 import { AuthService } from '../services/authService.js';
 import { authenticateToken, AuthenticatedRequest } from '../middlewares/authMiddleware.js';
+import { validateRecurrence } from '../utils/recurrenceValidator.js';
+
+const RecurrenceZodSchema = z.string()
+  .trim()
+  .max(100)
+  .superRefine((val, ctx) => {
+    const res = validateRecurrence(val);
+    if (!res.valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: res.error || 'Formato de recorrência inválido.',
+      });
+    }
+  });
 
 const CreateProfileSchema = z.object({
   name: z.string({ required_error: 'O nome do perfil é obrigatório.' })
@@ -33,7 +47,7 @@ const CreateMedicationSchema = z.object({
     .min(1, 'O nome do medicamento não pode ser vazio.')
     .max(150, 'O nome do medicamento deve ter no máximo 150 caracteres.'),
   dosage: z.string().trim().max(100).optional(),
-  recurrence: z.string().trim().max(50).optional(),
+  recurrence: RecurrenceZodSchema.optional(),
 });
 
 function sendJson(res: http.ServerResponse, statusCode: number, data: any) {
@@ -249,6 +263,15 @@ export async function handleProfileRoutes(
             statusCode: 404,
             error: 'Not Found',
             message: 'Perfil não encontrado para associar o medicamento.',
+          });
+          return true;
+        }
+
+        if (result.error === 'INVALID_RECURRENCE') {
+          sendJson(res, 400, {
+            statusCode: 400,
+            error: 'Bad Request',
+            message: result.errorMessage || 'Formato de recorrência inválido.',
           });
           return true;
         }

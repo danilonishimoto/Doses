@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test:notifications": "tsx src/services/notificationService.test.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },

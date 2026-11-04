@@ -311,7 +311,8 @@
 
   .avatar-options-row {
     display: flex;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 16px 12px;
     align-items: flex-start;
   }
 
@@ -578,6 +579,15 @@
 
   .ai-sphere-button:hover {
     transform: scale(1.03);
+  }
+
+  .floating-add-recipe-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 37, 78, 0.32) !important;
+  }
+
+  .floating-add-recipe-btn:active {
+    transform: scale(0.95);
   }
 
   .bottom-nav-surface {

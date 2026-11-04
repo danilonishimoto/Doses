@@ -3,11 +3,12 @@ import { OnboardingHeader } from '../../components/ui/OnboardingHeader';
 import { FormField } from '../../components/forms/FormField';
 import { EyeIcon, EyeOffIcon } from '../../assets/icons';
 import { AccountService } from '../../services/account/AccountService';
+import type { Account } from '../../types';
 
 interface CreateAccountScreenProps {
   initialUsername?: string;
   initialPassword?: string;
-  onSuccess: (accountData: { id: string; username: string }) => void;
+  onSuccess: (account: Account) => void;
 }
 
 export function CreateAccountScreen({
@@ -53,7 +54,7 @@ export function CreateAccountScreen({
     try {
       setIsSubmitting(true);
       const account = await AccountService.createAccount(trimmedUsername, password);
-      onSuccess({ id: account.id, username: account.username });
+      onSuccess(account);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Falha ao criar conta. Tente novamente.';
       if (msg.toLowerCase().includes('usuário já está cadastrado')) {

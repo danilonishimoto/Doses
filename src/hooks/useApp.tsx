@@ -8,12 +8,13 @@ interface AppContextValue {
   activeProfile: Profile | null;
   profiles: Profile[];
   isLoading: boolean;
+  loginAccount: (account: Account) => Promise<void>;
   selectActiveProfile: (profileId: string) => Promise<boolean>;
   updateProfile: (
     profileId: string,
     updates: Partial<Omit<Profile, 'id' | 'accountId' | 'createdAt'>>
   ) => Promise<Profile>;
-  refreshProfiles: () => Promise<void>;
+  refreshProfiles: () => Promise<Profile[]>;
   logout: () => void;
   switchProfile: () => void;
 }
@@ -26,10 +27,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshProfiles = useCallback(async () => {
-    if (!currentAccount) return;
+  const refreshProfiles = useCallback(async (): Promise<Profile[]> => {
+    let account = currentAccount;
+    if (!account) {
+      const activeId = AccountService.getActiveAccountId();
+      if (activeId) {
+        account = (await AccountService.getAccountById(activeId)) || null;
+        if (account) setCurrentAccount(account);
+      }
+    }
+    if (!account) return [];
+
     try {
-      const userProfiles = await ProfileService.getProfilesByAccount(currentAccount.id);
+      const userProfiles = await ProfileService.getProfilesByAccount(account.id);
       setProfiles(userProfiles);
 
       const activeId = ProfileService.getActiveProfileId();
@@ -42,10 +52,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setActiveProfile(null);
         }
       }
+      return userProfiles;
     } catch (err) {
       console.error('Erro ao atualizar lista de perfis:', err);
+      return [];
     }
   }, [currentAccount]);
+
+  const loginAccount = useCallback(async (account: Account) => {
+    AccountService.setActiveAccountId(account.id);
+    setCurrentAccount(account);
+    const userProfiles = await ProfileService.getProfilesByAccount(account.id);
+    setProfiles(userProfiles);
+
+    const activeId = ProfileService.getActiveProfileId();
+    if (activeId) {
+      const found = userProfiles.find((p) => p.id === activeId);
+      if (found) {
+        setActiveProfile(found);
+      } else {
+        ProfileService.clearActiveProfileId();
+        setActiveProfile(null);
+      }
+    } else {
+      setActiveProfile(null);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadInitial() {
@@ -90,9 +122,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const selectActiveProfile = useCallback(
     async (profileId: string): Promise<boolean> => {
-      if (!currentAccount) return false;
-      const target = profiles.find((p) => p.id === profileId);
-      if (!target || target.accountId !== currentAccount.id) {
+      let account = currentAccount;
+      if (!account) {
+        const activeId = AccountService.getActiveAccountId();
+        if (activeId) {
+          account = (await AccountService.getAccountById(activeId)) || null;
+          if (account) setCurrentAccount(account);
+        }
+      }
+      if (!account) return false;
+
+      let target = profiles.find((p) => p.id === profileId);
+      if (!target) {
+        target = await ProfileService.getProfileById(profileId);
+      }
+      if (!target || target.accountId !== account.id) {
         console.error('Tentativa de selecionar perfil inválido ou de outra conta.');
         return false;
       }
@@ -139,6 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         activeProfile,
         profiles,
         isLoading,
+        loginAccount,
         selectActiveProfile,
         updateProfile,
         refreshProfiles,

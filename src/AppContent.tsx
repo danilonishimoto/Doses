@@ -29,6 +29,7 @@ export function AppContent() {
     activeProfile,
     profiles,
     isLoading,
+    loginAccount,
     selectActiveProfile,
     refreshProfiles,
   } = useApp();
@@ -49,8 +50,8 @@ export function AppContent() {
   if (!currentAccount) {
     return (
       <CreateAccountScreen
-        onSuccess={async () => {
-          await refreshProfiles();
+        onSuccess={async (account) => {
+          await loginAccount(account);
           setOnboardingSubstep('main-profile');
         }}
       />
@@ -78,7 +79,12 @@ export function AppContent() {
         profiles={profiles}
         onBack={() => setOnboardingSubstep(null)}
         onAddPerson={() => setOnboardingSubstep('add-person')}
-        onComplete={() => setOnboardingSubstep(null)}
+        onComplete={async () => {
+          setOnboardingSubstep(null);
+          if (profiles.length === 1 && profiles[0].isMainProfile) {
+            await selectActiveProfile(profiles[0].id);
+          }
+        }}
       />
     );
   }

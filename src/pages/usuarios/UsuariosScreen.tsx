@@ -240,8 +240,6 @@ export function UsuariosScreen() {
               gap: 12,
             }}
           >
-            {/* Card 1: Notificações Web Push */}
-            <UserNotificationsCard />
 
             {/* Card 2: Dados físicos com suporte a edição e persistência */}
             <UserPhysicalDataCard
@@ -261,6 +259,9 @@ export function UsuariosScreen() {
               onSave={handleSaveAllergies}
             />
 
+            {/* Card 1: Notificações Web Push */}
+            <UserNotificationsCard />
+            
             {/* Ação de Sair da Sessão */}
             <div style={{ marginTop: 8 }}>
               <button

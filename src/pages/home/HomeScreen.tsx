@@ -1,34 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DosesLogo } from '../../assets/icons';
 import { AiHighlightSection } from '../../components/home/AiHighlightSection';
 import { MedicationCard } from '../../components/home/MedicationCard';
-import { getDailyMedicationsMock } from '../../mocks/home/dailyMedications.mock';
 import { useApp } from '../../hooks/useApp';
-import type { DailyMedicationItem } from '../../types';
+import { useDailyDoses } from '../../features/medications/hooks/useDailyDoses';
 
 export function HomeScreen() {
   const { activeProfile } = useApp();
+  const navigate = useNavigate();
 
-  // Dados mockados sincronizados com o perfil ativo
-  const initialMocks = useMemo(() => getDailyMedicationsMock(activeProfile), [activeProfile]);
-  const [medications, setMedications] = useState<DailyMedicationItem[]>(initialMocks);
+  const {
+    doses,
+    totalMedicationsCount,
+    isLoading,
+    error,
+    refresh,
+    toggleDoseStatus,
+  } = useDailyDoses({ activeProfile });
 
-  // Atualiza os dados quando o perfil ativo mudar
-  useMemo(() => {
-    setMedications(getDailyMedicationsMock(activeProfile));
-  }, [activeProfile]);
-
-  const handleToggleStatus = (id: string) => {
-    setMedications((prev) =>
-      prev.map((med) =>
-        med.id === id
-          ? { ...med, status: med.status === 'completed' ? 'pending' : 'completed' }
-          : med
-      )
-    );
-  };
-
-  const displayName = activeProfile?.name || 'Camilla';
+  const displayName = activeProfile?.name || 'você';
 
   return (
     <div
@@ -119,35 +109,212 @@ export function HomeScreen() {
             marginTop: 8,
           }}
         >
-          <h3
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontWeight: 600,
-              fontSize: 26,
-              lineHeight: 1.2,
-              color: '#000000',
-              margin: 0,
-              marginBottom: 4,
-            }}
-          >
-            Medicamentos do dia
-          </h3>
-
           <div
             style={{
               display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
+              alignItems: 'center',
+              justifyContent: 'space-between',
             }}
           >
-            {medications.map((item) => (
-              <MedicationCard
-                key={item.id}
-                item={item}
-                onToggleStatus={handleToggleStatus}
-              />
-            ))}
+            <h3
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 600,
+                fontSize: 26,
+                lineHeight: 1.2,
+                color: '#000000',
+                margin: 0,
+                marginBottom: 4,
+              }}
+            >
+              Medicamentos do dia
+            </h3>
+
+            {!isLoading && doses.length > 0 && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  color: '#4E6D93',
+                  fontWeight: 600,
+                }}
+              >
+                {doses.filter((d) => d.status === 'completed').length}/{doses.length} tomados
+              </span>
+            )}
           </div>
+
+          {/* Estado de Carregamento */}
+          {isLoading && (
+            <div
+              style={{
+                padding: '32px 16px',
+                textAlign: 'center',
+                backgroundColor: '#F8FAFC',
+                borderRadius: 20,
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 15,
+                  color: '#4E6D93',
+                  margin: 0,
+                }}
+              >
+                Carregando medicamentos do dia...
+              </p>
+            </div>
+          )}
+
+          {/* Estado de Erro */}
+          {!isLoading && error && (
+            <div
+              role="alert"
+              style={{
+                padding: '16px 20px',
+                backgroundColor: 'var(--color-bg-error, #FFEBEE)',
+                border: '1px solid var(--color-border-error, #E53935)',
+                borderRadius: 16,
+                color: '#C62828',
+                fontSize: 14,
+                fontFamily: 'var(--font-body)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <p style={{ margin: 0, fontWeight: 600 }}>{error}</p>
+              <button
+                type="button"
+                onClick={() => refresh()}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#000000',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  padding: 0,
+                }}
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
+          {/* Estado Vazio 1: Perfil não possui nenhum medicamento cadastrado */}
+          {!isLoading && !error && totalMedicationsCount === 0 && (
+            <div
+              style={{
+                padding: '28px 20px',
+                backgroundColor: '#F8FAFC',
+                borderRadius: 20,
+                border: '1px dashed #CBD5E1',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                alignItems: 'center',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: '#000000',
+                  margin: 0,
+                }}
+              >
+                Nenhum medicamento cadastrado
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  color: '#475569',
+                  margin: 0,
+                  maxWidth: 280,
+                }}
+              >
+                Cadastre os medicamentos de {displayName} para acompanhar as doses de hoje.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/medicamentos')}
+                className="primary-action-button"
+                style={{
+                  minHeight: 48,
+                  height: 48,
+                  padding: '10px 20px',
+                  fontSize: 16,
+                  marginTop: 8,
+                }}
+              >
+                Cadastrar medicamento
+              </button>
+            </div>
+          )}
+
+          {/* Estado Vazio 2: Perfil tem medicamentos, mas nenhum previsto para hoje */}
+          {!isLoading && !error && totalMedicationsCount > 0 && doses.length === 0 && (
+            <div
+              style={{
+                padding: '28px 20px',
+                backgroundColor: '#F0FDF4',
+                borderRadius: 20,
+                border: '1px solid #BBF9E0',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: '#166534',
+                  margin: 0,
+                }}
+              >
+                Nenhum medicamento para hoje
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                  color: '#15803D',
+                  margin: 0,
+                }}
+              >
+                Tudo em ordem com os cuidados de {displayName} na data de hoje.
+              </p>
+            </div>
+          )}
+
+          {/* Lista de Doses Reais */}
+          {!isLoading && !error && doses.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              {doses.map((item) => (
+                <MedicationCard
+                  key={item.id}
+                  item={item}
+                  onToggleStatus={toggleDoseStatus}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Espaço reservado para a navegação inferior flutuante não cobrir a lista */}

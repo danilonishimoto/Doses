@@ -2,6 +2,7 @@ import http from 'node:http';
 import { z } from 'zod';
 import { ProfileService } from '../services/profileService.js';
 import { MedicationService } from '../services/medicationService.js';
+import { OccurrenceService } from '../services/occurrenceService.js';
 import { AuthService } from '../services/authService.js';
 import { authenticateToken, AuthenticatedRequest } from '../middlewares/authMiddleware.js';
 import { validateRecurrence } from '../utils/recurrenceValidator.js';
@@ -85,7 +86,8 @@ export async function handleProfileRoutes(
   res: http.ServerResponse,
   profileService: ProfileService,
   medicationService: MedicationService,
-  authService?: AuthService
+  authService?: AuthService,
+  occurrenceService?: OccurrenceService
 ): Promise<boolean> {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname.replace(/\/+$/, '');
@@ -303,6 +305,83 @@ export async function handleProfileRoutes(
       sendJson(res, 200, {
         statusCode: 200,
         medications,
+      });
+      return true;
+    }
+  }
+
+  // 4. /api/v1/profiles/:profileId/occurrences
+  if (pathParts.length >= 5 && pathParts[4] === 'occurrences') {
+    const profileId = pathParts[3];
+    const occService = occurrenceService || new OccurrenceService();
+
+    // 4.1. GET /api/v1/profiles/:profileId/occurrences?date=YYYY-MM-DD
+    if (pathParts.length === 5 && req.method === 'GET') {
+      const dateParam = url.searchParams.get('date');
+      const targetDate = dateParam || new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(new Date());
+
+      const occurrences = occService.listOccurrencesByDate(accountId, profileId, targetDate);
+      sendJson(res, 200, {
+        statusCode: 200,
+        date: targetDate,
+        occurrences,
+      });
+      return true;
+    }
+
+    // 4.2. POST /api/v1/profiles/:profileId/occurrences/:occurrenceId/confirm
+    if (pathParts.length === 7 && pathParts[6] === 'confirm' && req.method === 'POST') {
+      const occurrenceId = pathParts[5];
+      let confirmedAt: string | undefined;
+      try {
+        const rawBody = await parseBodyJson(req);
+        if (rawBody && typeof rawBody.confirmedAt === 'string') {
+          confirmedAt = rawBody.confirmedAt;
+        }
+      } catch {
+        // body opcional
+      }
+
+      const result = occService.confirmOccurrence(accountId, profileId, occurrenceId, confirmedAt);
+      if (result.error === 'NOT_FOUND') {
+        sendJson(res, 404, {
+          statusCode: 404,
+          error: 'Not Found',
+          message: 'Ocorrência não encontrada ou cancelada.',
+        });
+        return true;
+      }
+
+      sendJson(res, 200, {
+        statusCode: 200,
+        message: 'Dose confirmada com sucesso.',
+        ...result,
+      });
+      return true;
+    }
+
+    // 4.3. POST /api/v1/profiles/:profileId/occurrences/:occurrenceId/unconfirm
+    if (pathParts.length === 7 && pathParts[6] === 'unconfirm' && req.method === 'POST') {
+      const occurrenceId = pathParts[5];
+      const result = occService.unconfirmOccurrence(accountId, profileId, occurrenceId);
+      if (result.error === 'NOT_FOUND') {
+        sendJson(res, 404, {
+          statusCode: 404,
+          error: 'Not Found',
+          message: 'Ocorrência não encontrada ou cancelada.',
+        });
+        return true;
+      }
+
+      sendJson(res, 200, {
+        statusCode: 200,
+        message: 'Confirmação desfeita com sucesso.',
+        ...result,
       });
       return true;
     }

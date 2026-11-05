@@ -35,6 +35,8 @@ export interface Profile {
   height: number;
   avatar: AvatarId;
   isMainProfile: boolean;
+  medicalConditions?: string;
+  allergies?: string;
   createdAt: string;
   updatedAt: string;
 }

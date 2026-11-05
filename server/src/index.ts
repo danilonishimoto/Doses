@@ -11,6 +11,7 @@ import { ProfileService } from './services/profileService.js';
 import { MedicationService } from './services/medicationService.js';
 import { MedicationTimeService } from './services/medicationTimeService.js';
 import { OccurrenceService } from './services/occurrenceService.js';
+import { PrescriptionService } from './services/prescriptionService.js';
 import { SchedulerService } from './services/schedulerService.js';
 import { handleProfileRoutes } from './api/profileRoutes.js';
 import { handleMedicationRoutes } from './api/medicationRoutes.js';
@@ -29,6 +30,7 @@ const profileService = new ProfileService();
 const medicationService = new MedicationService();
 const medicationTimeService = new MedicationTimeService();
 const occurrenceService = new OccurrenceService();
+const prescriptionService = new PrescriptionService();
 const schedulerService = new SchedulerService({ intervalMs: 30000, horizonDays: 2 });
 
 // 3. Configura chaves VAPID
@@ -110,7 +112,7 @@ const server = http.createServer((req, res) => {
 
   // Rotas de Perfis (/api/v1/profiles*)
   if (url.pathname.startsWith('/api/v1/profiles')) {
-    handleProfileRoutes(req, res, profileService, medicationService, authService, occurrenceService).catch((err) => {
+    handleProfileRoutes(req, res, profileService, medicationService, authService, occurrenceService, prescriptionService).catch((err) => {
       console.error('[HTTP Profile Error]', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ statusCode: 500, error: 'Internal Server Error' }));

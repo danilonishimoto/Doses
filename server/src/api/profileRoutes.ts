@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ProfileService } from '../services/profileService.js';
 import { MedicationService } from '../services/medicationService.js';
 import { OccurrenceService } from '../services/occurrenceService.js';
+import { PrescriptionService } from '../services/prescriptionService.js';
 import { AuthService } from '../services/authService.js';
 import { authenticateToken, AuthenticatedRequest } from '../middlewares/authMiddleware.js';
 import { validateRecurrence } from '../utils/recurrenceValidator.js';
@@ -31,6 +32,11 @@ const CreateProfileSchema = z.object({
     .min(1, 'O avatar não pode ser vazio.')
     .max(200, 'O avatar deve ter no máximo 200 caracteres.'),
   isMainProfile: z.boolean().optional(),
+  age: z.number().int().min(0).max(150).optional(),
+  weight: z.number().min(0).max(500).optional(),
+  height: z.number().min(0).max(300).optional(),
+  medicalConditions: z.string().max(1000).optional(),
+  allergies: z.string().max(1000).optional(),
 });
 
 const UpdateProfileSchema = z.object({
@@ -38,6 +44,11 @@ const UpdateProfileSchema = z.object({
   surname: z.string().trim().max(100).optional(),
   avatar: z.string().trim().min(1, 'O avatar não pode ser vazio.').max(200).optional(),
   isMainProfile: z.boolean().optional(),
+  age: z.number().int().min(0).max(150).optional(),
+  weight: z.number().min(0).max(500).optional(),
+  height: z.number().min(0).max(300).optional(),
+  medicalConditions: z.string().max(1000).optional(),
+  allergies: z.string().max(1000).optional(),
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização.',
 });
@@ -49,6 +60,41 @@ const CreateMedicationSchema = z.object({
     .max(150, 'O nome do medicamento deve ter no máximo 150 caracteres.'),
   dosage: z.string().trim().max(100).optional(),
   recurrence: RecurrenceZodSchema.optional(),
+});
+
+const CreatePrescriptionSchema = z.object({
+  specialty: z.string({ required_error: 'A especialidade é obrigatória.' })
+    .trim()
+    .min(1, 'A especialidade não pode ser vazia.')
+    .max(100),
+  doctorName: z.string({ required_error: 'O nome do médico é obrigatório.' })
+    .trim()
+    .min(1, 'O nome do médico não pode ser vazio.')
+    .max(150),
+  crm: z.string().trim().max(50).optional(),
+  clinicOrHospital: z.string().trim().max(150).optional(),
+  emissionDate: z.string({ required_error: 'A data de emissão é obrigatória.' })
+    .trim()
+    .min(1, 'A data de emissão não pode ser vazia.')
+    .max(50),
+  expirationDate: z.string().trim().max(50).optional(),
+  medications: z.array(z.string()).optional(),
+  instructions: z.string().trim().max(1000).optional(),
+  cardColor: z.string().trim().max(30).optional(),
+});
+
+const UpdatePrescriptionSchema = z.object({
+  specialty: z.string().trim().min(1).max(100).optional(),
+  doctorName: z.string().trim().min(1).max(150).optional(),
+  crm: z.string().trim().max(50).optional(),
+  clinicOrHospital: z.string().trim().max(150).optional(),
+  emissionDate: z.string().trim().min(1).max(50).optional(),
+  expirationDate: z.string().trim().max(50).optional(),
+  medications: z.array(z.string()).optional(),
+  instructions: z.string().trim().max(1000).optional(),
+  cardColor: z.string().trim().max(30).optional(),
+}).refine((data) => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização.',
 });
 
 function sendJson(res: http.ServerResponse, statusCode: number, data: any) {
@@ -87,7 +133,8 @@ export async function handleProfileRoutes(
   profileService: ProfileService,
   medicationService: MedicationService,
   authService?: AuthService,
-  occurrenceService?: OccurrenceService
+  occurrenceService?: OccurrenceService,
+  prescriptionService?: PrescriptionService
 ): Promise<boolean> {
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname.replace(/\/+$/, '');
@@ -104,6 +151,7 @@ export async function handleProfileRoutes(
   }
 
   const accountId = req.user.accountId;
+  const prescService = prescriptionService || new PrescriptionService();
 
   // 1. /api/v1/profiles
   if (pathParts.length === 3) {
@@ -128,6 +176,11 @@ export async function handleProfileRoutes(
           surname: parsed.data.surname,
           avatar: parsed.data.avatar,
           isMainProfile: parsed.data.isMainProfile,
+          age: parsed.data.age,
+          weight: parsed.data.weight,
+          height: parsed.data.height,
+          medicalConditions: parsed.data.medicalConditions,
+          allergies: parsed.data.allergies,
         });
 
         sendJson(res, 201, {
@@ -180,8 +233,8 @@ export async function handleProfileRoutes(
       return true;
     }
 
-    // 2.2. PATCH /api/v1/profiles/:id — Atualizar perfil
-    if (req.method === 'PATCH') {
+    // 2.2. PATCH ou PUT /api/v1/profiles/:id — Atualizar perfil
+    if (req.method === 'PATCH' || req.method === 'PUT') {
       try {
         const rawBody = await parseBodyJson(req);
         const parsed = UpdateProfileSchema.safeParse(rawBody);
@@ -315,8 +368,22 @@ export async function handleProfileRoutes(
     const profileId = pathParts[3];
     const occService = occurrenceService || new OccurrenceService();
 
-    // 4.1. GET /api/v1/profiles/:profileId/occurrences?date=YYYY-MM-DD
+    // 4.1. GET /api/v1/profiles/:profileId/occurrences
     if (pathParts.length === 5 && req.method === 'GET') {
+      const startDate = url.searchParams.get('startDate');
+      const endDate = url.searchParams.get('endDate');
+
+      if (startDate && endDate) {
+        const occurrences = occService.listOccurrencesByDateRange(accountId, profileId, startDate, endDate);
+        sendJson(res, 200, {
+          statusCode: 200,
+          startDate,
+          endDate,
+          occurrences,
+        });
+        return true;
+      }
+
       const dateParam = url.searchParams.get('date');
       const targetDate = dateParam || new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/Sao_Paulo',
@@ -384,6 +451,149 @@ export async function handleProfileRoutes(
         ...result,
       });
       return true;
+    }
+  }
+
+  // 5. /api/v1/profiles/:profileId/prescriptions
+  if (pathParts.length >= 5 && pathParts[4] === 'prescriptions') {
+    const profileId = pathParts[3];
+
+    // 5.1. POST /api/v1/profiles/:profileId/prescriptions — Criar receita médica
+    if (pathParts.length === 5 && req.method === 'POST') {
+      try {
+        const rawBody = await parseBodyJson(req);
+        const parsed = CreatePrescriptionSchema.safeParse(rawBody);
+
+        if (!parsed.success) {
+          sendJson(res, 400, {
+            statusCode: 400,
+            error: 'Bad Request',
+            message: 'Dados da receita inválidos.',
+            details: parsed.error.issues.map((i) => ({ field: i.path.join('.'), message: i.message })),
+          });
+          return true;
+        }
+
+        const result = prescService.createPrescription(accountId, profileId, parsed.data);
+        if ('error' in result && result.error === 'PROFILE_NOT_FOUND') {
+          sendJson(res, 404, {
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Perfil não encontrado para associar a receita.',
+          });
+          return true;
+        }
+
+        sendJson(res, 201, {
+          statusCode: 201,
+          message: 'Receita médica cadastrada com sucesso.',
+          prescription: result,
+        });
+        return true;
+      } catch (err: any) {
+        sendJson(res, 400, { statusCode: 400, error: 'Bad Request', message: err.message });
+        return true;
+      }
+    }
+
+    // 5.2. GET /api/v1/profiles/:profileId/prescriptions — Listar receitas do perfil
+    if (pathParts.length === 5 && req.method === 'GET') {
+      const prescriptions = prescService.listPrescriptions(accountId, profileId);
+      if (prescriptions === null) {
+        sendJson(res, 404, {
+          statusCode: 404,
+          error: 'Not Found',
+          message: 'Perfil não encontrado.',
+        });
+        return true;
+      }
+
+      sendJson(res, 200, {
+        statusCode: 200,
+        prescriptions,
+      });
+      return true;
+    }
+
+    // 5.3. /api/v1/profiles/:profileId/prescriptions/:prescriptionId
+    if (pathParts.length === 6) {
+      const prescriptionId = pathParts[5];
+
+      // GET
+      if (req.method === 'GET') {
+        const item = prescService.getPrescriptionById(accountId, profileId, prescriptionId);
+        if (!item) {
+          sendJson(res, 404, {
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Receita médica não encontrada.',
+          });
+          return true;
+        }
+
+        sendJson(res, 200, {
+          statusCode: 200,
+          prescription: item,
+        });
+        return true;
+      }
+
+      // PATCH ou PUT
+      if (req.method === 'PATCH' || req.method === 'PUT') {
+        try {
+          const rawBody = await parseBodyJson(req);
+          const parsed = UpdatePrescriptionSchema.safeParse(rawBody);
+
+          if (!parsed.success) {
+            sendJson(res, 400, {
+              statusCode: 400,
+              error: 'Bad Request',
+              message: 'Dados de atualização da receita inválidos.',
+              details: parsed.error.issues.map((i) => ({ field: i.path.join('.'), message: i.message })),
+            });
+            return true;
+          }
+
+          const updated = prescService.updatePrescription(accountId, profileId, prescriptionId, parsed.data);
+          if (!updated) {
+            sendJson(res, 404, {
+              statusCode: 404,
+              error: 'Not Found',
+              message: 'Receita médica não encontrada para atualização.',
+            });
+            return true;
+          }
+
+          sendJson(res, 200, {
+            statusCode: 200,
+            message: 'Receita médica atualizada com sucesso.',
+            prescription: updated,
+          });
+          return true;
+        } catch (err: any) {
+          sendJson(res, 400, { statusCode: 400, error: 'Bad Request', message: err.message });
+          return true;
+        }
+      }
+
+      // DELETE
+      if (req.method === 'DELETE') {
+        const deleted = prescService.deletePrescription(accountId, profileId, prescriptionId);
+        if (!deleted) {
+          sendJson(res, 404, {
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Receita médica não encontrada para exclusão.',
+          });
+          return true;
+        }
+
+        sendJson(res, 200, {
+          statusCode: 200,
+          message: 'Receita médica excluída com sucesso.',
+        });
+        return true;
+      }
     }
   }
 

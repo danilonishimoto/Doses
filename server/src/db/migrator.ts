@@ -7,6 +7,8 @@ import { migration as migration005 } from './migrations/005_enhance_push_subscri
 import { migration as migration006 } from './migrations/006_composite_foreign_keys.js';
 import { migration as migration007 } from './migrations/007_temporal_configuration_and_versioning.js';
 import { migration as migration008 } from './migrations/008_occurrence_dispatches_tracking.js';
+import { migration as migration009 } from './migrations/009_create_prescriptions.js';
+import { migration as migration010 } from './migrations/010_add_profile_clinical_fields.js';
 
 export interface Migration {
   version: string;
@@ -24,6 +26,8 @@ export const ALL_MIGRATIONS: Migration[] = [
   migration006,
   migration007,
   migration008,
+  migration009,
+  migration010,
 ];
 
 export function runVersionedMigrations(db: Database.Database): { applied: string[]; skipped: string[] } {

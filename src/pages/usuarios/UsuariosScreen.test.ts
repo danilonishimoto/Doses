@@ -187,4 +187,33 @@ describe('Telas de Informações do Usuário & Persistência — Doses', () => {
     ProfileService.setActiveProfileId(p2.id);
     assert.equal(ProfileService.getActiveProfileId(), p2.id);
   });
+
+  it('6. Deve persistir e atualizar condições médicas e alergias no perfil', async () => {
+    const account = await AccountService.createAccount('usuario_clinico', 'Senha@1234');
+    const profile = await ProfileService.createProfile({
+      accountId: account.id,
+      name: 'Camilla',
+      surname: 'Silva',
+      age: 42,
+      weight: 63,
+      height: 165,
+      avatar: 'young-woman',
+      isMainProfile: true,
+    });
+
+    // Atualiza condições clínicas
+    const updated = await ProfileService.updateProfile(profile.id, {
+      medicalConditions: 'Menopausa e Hipotireoidismo',
+      allergies: 'Dipirona e Frutos do mar',
+    });
+
+    assert.equal(updated.medicalConditions, 'Menopausa e Hipotireoidismo');
+    assert.equal(updated.allergies, 'Dipirona e Frutos do mar');
+
+    // Confirma persistência
+    const fromDb = await db.profiles.get(profile.id);
+    assert.ok(fromDb);
+    assert.equal(fromDb.medicalConditions, 'Menopausa e Hipotireoidismo');
+    assert.equal(fromDb.allergies, 'Dipirona e Frutos do mar');
+  });
 });

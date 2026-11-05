@@ -76,19 +76,42 @@ export function UsuariosScreen() {
     await updateProfile(displayedProfile.id, updates);
   };
 
-  // Mapeamento contextual de condições e alergias conforme o perfil do Figma
-  const getConditionsText = (name: string): string => {
-    const lower = name.toLowerCase();
-    if (lower.includes('camilla')) return 'Menopausa';
-    if (lower.includes('josé') || lower.includes('jose')) return 'Parkinson';
-    return 'Não informadas.';
+  const handleSaveMedicalConditions = async (newText: string) => {
+    await updateProfile(displayedProfile.id, { medicalConditions: newText });
   };
 
-  const getAllergiesText = (name: string): string => {
-    const lower = name.toLowerCase();
-    if (lower.includes('josé') || lower.includes('jose')) return 'Camarão\nAmendoim';
-    return 'Não informadas.';
+  const handleSaveAllergies = async (newText: string) => {
+    await updateProfile(displayedProfile.id, { allergies: newText });
   };
+
+  // Se o perfil ainda não possui condições ou alergias persistidas, inicializa com os dados de referência
+  useEffect(() => {
+    if (!displayedProfile) return;
+    const lower = displayedProfile.name.toLowerCase();
+    const needsConditions = !displayedProfile.medicalConditions;
+    const needsAllergies = !displayedProfile.allergies;
+
+    if (needsConditions || needsAllergies) {
+      let initialCond = displayedProfile.medicalConditions;
+      let initialAllerg = displayedProfile.allergies;
+
+      if (needsConditions) {
+        if (lower.includes('camilla')) initialCond = 'Menopausa';
+        else if (lower.includes('josé') || lower.includes('jose')) initialCond = 'Parkinson';
+        else initialCond = 'Não informadas.';
+      }
+
+      if (needsAllergies) {
+        if (lower.includes('josé') || lower.includes('jose')) initialAllerg = 'Camarão\nAmendoim';
+        else initialAllerg = 'Não informadas.';
+      }
+
+      updateProfile(displayedProfile.id, {
+        medicalConditions: initialCond,
+        allergies: initialAllerg,
+      }).catch(console.warn);
+    }
+  }, [displayedProfile?.id]);
 
   return (
     <div
@@ -226,14 +249,16 @@ export function UsuariosScreen() {
               onSave={handleSavePhysicalData}
             />
 
-            {/* Card 3: Condições médicas */}
+            {/* Card 3: Condições médicas com persistência real */}
             <UserMedicalConditionsCard
-              conditionsText={getConditionsText(displayedProfile.name)}
+              conditionsText={displayedProfile.medicalConditions || 'Não informadas.'}
+              onSave={handleSaveMedicalConditions}
             />
 
-            {/* Card 4: Alergias */}
+            {/* Card 4: Alergias com persistência real */}
             <UserAllergiesCard
-              allergiesText={getAllergiesText(displayedProfile.name)}
+              allergiesText={displayedProfile.allergies || 'Não informadas.'}
+              onSave={handleSaveAllergies}
             />
 
             {/* Ação de Sair da Sessão */}

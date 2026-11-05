@@ -55,6 +55,9 @@ export class ProfileService {
           surname: trimmedSurname,
           avatar: data.avatar,
           isMainProfile: Boolean(data.isMainProfile),
+          age: Math.round(data.age),
+          weight: parseFloat(data.weight.toFixed(2)),
+          height: Math.round(data.height),
         });
         if (res && res.profile && res.profile.id) {
           remoteId = res.profile.id;
@@ -107,11 +110,13 @@ export class ProfileService {
                 accountId,
                 name: rem.name,
                 surname: rem.surname || '',
-                age: 30, // Padrão se não informado no backend
-                weight: 70,
-                height: 170,
+                age: typeof rem.age === 'number' && rem.age > 0 ? rem.age : 30,
+                weight: typeof rem.weight === 'number' && rem.weight > 0 ? rem.weight : 70,
+                height: typeof rem.height === 'number' && rem.height > 0 ? rem.height : 170,
                 avatar: (rem.avatar as AvatarId) || 'young-woman',
                 isMainProfile: Boolean(rem.isMainProfile),
+                medicalConditions: rem.medicalConditions || '',
+                allergies: rem.allergies || '',
                 createdAt: rem.createdAt || new Date().toISOString(),
                 updatedAt: rem.updatedAt || new Date().toISOString(),
               };
@@ -186,6 +191,11 @@ export class ProfileService {
           surname: updated.surname,
           avatar: updated.avatar,
           isMainProfile: updated.isMainProfile,
+          age: updated.age,
+          weight: updated.weight,
+          height: updated.height,
+          medicalConditions: updated.medicalConditions || '',
+          allergies: updated.allergies || '',
         });
       } catch (err: any) {
         if (err && typeof err.statusCode === 'number' && err.statusCode >= 400) {

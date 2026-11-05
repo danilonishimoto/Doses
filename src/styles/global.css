@@ -609,7 +609,7 @@
 
   .floating-add-recipe-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(0, 37, 78, 0.32) !important;
+    box-shadow: 0 3px 8px rgba(0, 37, 78, 0.15) !important;
   }
 
   .floating-add-recipe-btn:active {

@@ -28,9 +28,9 @@ export function FloatingAddButton({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 6px 16px rgba(0, 37, 78, 0.25)',
+        boxShadow: '0 2px 4px rgba(0, 37, 78, 0.1)',
         zIndex: 95,
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        transition: 'transform 0.1s ease, box-shadow 0.1s ease',
         color: '#000000',
       }}
     >

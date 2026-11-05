@@ -15,6 +15,7 @@ import { CronogramaScreen } from './pages/cronograma/CronogramaScreen';
 import { ReceitasScreen } from './pages/receitas/ReceitasScreen';
 import { MedicationsScreen } from './features/medications/pages/MedicationsScreen';
 import { UsuariosScreen } from './pages/usuarios/UsuariosScreen';
+import { NotificationOnboardingModal } from './components/notification/NotificationOnboardingModal';
 import type { Profile, OnboardingDraft } from './types';
 
 export type FlowStep =
@@ -173,19 +174,22 @@ export function AppContent() {
   }
 
   // 4. Se já há um perfil ativo na sessão em memória, exibe a Home e a navegação principal do aplicativo
-  if (activeProfile) {
+  if (activeProfile && currentAccount) {
     return (
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<HomeScreen />} />
-          <Route path="/home" element={<Navigate to="/" replace />} />
-          <Route path="/cronograma" element={<CronogramaScreen />} />
-          <Route path="/receitas" element={<ReceitasScreen />} />
-          <Route path="/medicamentos" element={<MedicationsScreen />} />
-          <Route path="/usuarios" element={<UsuariosScreen />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+      <>
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<HomeScreen />} />
+            <Route path="/home" element={<Navigate to="/" replace />} />
+            <Route path="/cronograma" element={<CronogramaScreen />} />
+            <Route path="/receitas" element={<ReceitasScreen />} />
+            <Route path="/medicamentos" element={<MedicationsScreen />} />
+            <Route path="/usuarios" element={<UsuariosScreen />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+        <NotificationOnboardingModal account={currentAccount} />
+      </>
     );
   }
 

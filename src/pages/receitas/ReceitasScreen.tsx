@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../hooks/useApp';
-import { getReceitasMock } from '../../mocks/receitas/receitas.mock';
 import { PrescriptionClientService } from '../../services/api/prescriptionClientService';
 import { ReceitaCard } from '../../components/receitas/ReceitaCard';
 import { FloatingAddButton } from '../../components/receitas/FloatingAddButton';
@@ -40,35 +39,9 @@ export function ReceitasScreen() {
 
     setIsLoading(true);
     PrescriptionClientService.listPrescriptions(activeProfile.id, activeProfile.name, activeProfile.avatar)
-      .then(async (items) => {
+      .then((items) => {
         if (!isMounted) return;
-        if (items.length === 0) {
-          // Inicializa as receitas do perfil conforme protótipo e persiste no SQLite
-          const seedMocks = getReceitasMock(activeProfile);
-          const seeded: ReceitaMedicaItem[] = [];
-          for (const m of seedMocks) {
-            const saved = await PrescriptionClientService.createPrescription(
-              activeProfile.id,
-              activeProfile.name,
-              activeProfile.avatar,
-              {
-                specialty: m.specialty,
-                doctorName: m.doctorName,
-                crm: m.crm,
-                clinicOrHospital: m.clinicOrHospital,
-                emissionDate: m.emissionDate,
-                expirationDate: m.expirationDate,
-                medications: m.medications,
-                instructions: m.instructions,
-                cardColor: m.cardColor,
-              }
-            );
-            seeded.push(saved);
-          }
-          if (isMounted) setReceitas(seeded);
-        } else {
-          setReceitas(items);
-        }
+        setReceitas(items);
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);

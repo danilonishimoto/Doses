@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../../hooks/useApp';
 import { getReceitasMock } from '../../mocks/receitas/receitas.mock';
+import { PrescriptionClientService } from '../../services/api/prescriptionClientService';
 import { ReceitaCard } from '../../components/receitas/ReceitaCard';
 import { FloatingAddButton } from '../../components/receitas/FloatingAddButton';
 import { ReceitaDetailModal } from '../../components/receitas/ReceitaDetailModal';
@@ -11,9 +12,8 @@ import type { ReceitaMedicaItem } from '../../types';
 export function ReceitasScreen() {
   const { activeProfile, profiles } = useApp();
 
-  // Dados mockados sincronizados inicialmente com o perfil ativo
-  const initialMocks = useMemo(() => getReceitasMock(activeProfile), [activeProfile]);
-  const [receitas, setReceitas] = useState<ReceitaMedicaItem[]>(initialMocks);
+  const [receitas, setReceitas] = useState<ReceitaMedicaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Estados dos modais
   const [selectedReceita, setSelectedReceita] = useState<ReceitaMedicaItem | null>(null);
@@ -30,6 +30,55 @@ export function ReceitasScreen() {
     }, 3000);
   };
 
+  useEffect(() => {
+    let isMounted = true;
+    if (!activeProfile) {
+      setReceitas([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    PrescriptionClientService.listPrescriptions(activeProfile.id, activeProfile.name, activeProfile.avatar)
+      .then(async (items) => {
+        if (!isMounted) return;
+        if (items.length === 0) {
+          // Inicializa as receitas do perfil conforme protótipo e persiste no SQLite
+          const seedMocks = getReceitasMock(activeProfile);
+          const seeded: ReceitaMedicaItem[] = [];
+          for (const m of seedMocks) {
+            const saved = await PrescriptionClientService.createPrescription(
+              activeProfile.id,
+              activeProfile.name,
+              activeProfile.avatar,
+              {
+                specialty: m.specialty,
+                doctorName: m.doctorName,
+                crm: m.crm,
+                clinicOrHospital: m.clinicOrHospital,
+                emissionDate: m.emissionDate,
+                expirationDate: m.expirationDate,
+                medications: m.medications,
+                instructions: m.instructions,
+                cardColor: m.cardColor,
+              }
+            );
+            seeded.push(saved);
+          }
+          if (isMounted) setReceitas(seeded);
+        } else {
+          setReceitas(items);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeProfile]);
+
   const handleOpenAccess = (item: ReceitaMedicaItem) => {
     setSelectedReceita(item);
   };
@@ -45,19 +94,34 @@ export function ReceitasScreen() {
     setIsFormOpen(true);
   };
 
-  const handleSaveReceita = (savedItem: ReceitaMedicaItem) => {
-    setReceitas((prev) => {
-      const exists = prev.some((r) => r.id === savedItem.id);
-      if (exists) {
-        showToast('Receita atualizada com sucesso!');
-        return prev.map((r) => (r.id === savedItem.id ? savedItem : r));
-      }
+  const handleSaveReceita = async (savedItem: ReceitaMedicaItem) => {
+    if (!activeProfile) return;
+    const exists = receitas.some((r) => r.id === savedItem.id);
+    if (exists) {
+      const updated = await PrescriptionClientService.updatePrescription(
+        activeProfile.id,
+        savedItem.id,
+        activeProfile.name,
+        activeProfile.avatar,
+        savedItem
+      );
+      setReceitas((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+      showToast('Receita atualizada com sucesso!');
+    } else {
+      const created = await PrescriptionClientService.createPrescription(
+        activeProfile.id,
+        activeProfile.name,
+        activeProfile.avatar,
+        savedItem
+      );
+      setReceitas((prev) => [created, ...prev]);
       showToast('Receita cadastrada com sucesso!');
-      return [savedItem, ...prev];
-    });
+    }
   };
 
-  const handleDeleteReceita = (receitaId: string) => {
+  const handleDeleteReceita = async (receitaId: string) => {
+    if (!activeProfile) return;
+    await PrescriptionClientService.deletePrescription(activeProfile.id, receitaId);
     setReceitas((prev) => prev.filter((r) => r.id !== receitaId));
     showToast('Receita removida.');
   };
@@ -145,8 +209,23 @@ export function ReceitasScreen() {
           </p>
         </header>
 
+        {/* Indicador de Carregamento */}
+        {isLoading && (
+          <div
+            style={{
+              padding: '32px 16px',
+              textAlign: 'center',
+              color: '#4E6D93',
+              fontFamily: 'var(--font-body)',
+              fontSize: 14,
+            }}
+          >
+            Carregando receitas médicas...
+          </div>
+        )}
+
         {/* Lista de receitas */}
-        {receitas.length === 0 ? (
+        {!isLoading && receitas.length === 0 ? (
           <div
             className="empty-receitas-state"
             style={{
@@ -222,23 +301,25 @@ export function ReceitasScreen() {
             </button>
           </div>
         ) : (
-          <div
-            className="receitas-list"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 20,
-            }}
-            aria-label="Lista de receitas médicas"
-          >
-            {receitas.map((receita) => (
-              <ReceitaCard
-                key={receita.id}
-                receita={receita}
-                onAccess={handleOpenAccess}
-              />
-            ))}
-          </div>
+          !isLoading && (
+            <div
+              className="receitas-list"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 20,
+              }}
+              aria-label="Lista de receitas médicas"
+            >
+              {receitas.map((receita) => (
+                <ReceitaCard
+                  key={receita.id}
+                  receita={receita}
+                  onAccess={handleOpenAccess}
+                />
+              ))}
+            </div>
+          )
         )}
       </div>
 

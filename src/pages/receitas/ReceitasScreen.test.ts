@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 (globalThis as any).React = React;
+
+const mockStorage: Record<string, string> = {};
+if (typeof (globalThis as any).localStorage === 'undefined') {
+  (globalThis as any).localStorage = {
+    getItem: (key: string) => mockStorage[key] || null,
+    setItem: (key: string, value: string) => { mockStorage[key] = String(value); },
+    removeItem: (key: string) => { delete mockStorage[key]; },
+    clear: () => { Object.keys(mockStorage).forEach((k) => delete mockStorage[k]); },
+    key: () => null,
+    length: 0,
+  };
+}
+
 import { FIGMA_RECEITAS_MOCK, getReceitasMock } from '../../mocks/receitas/receitas.mock';
 import type { ReceitaMedicaItem, Profile } from '../../types';
 
@@ -158,5 +171,49 @@ test('Seção de Receitas Médicas — Doses', async (t) => {
     // Testa chamada de clique
     vnode.props.onClick();
     assert.equal(clicked, true, 'O evento onClick deve ser disparado ao tocar no botão');
+  });
+
+  await t.test('6. Persistência de receitas via PrescriptionClientService (criação, edição e exclusão)', async () => {
+    const { PrescriptionClientService } = await import('../../services/api/prescriptionClientService');
+
+    // 1. Cria receita
+    const created = await PrescriptionClientService.createPrescription(
+      'prof-test-persist',
+      'Camilla',
+      'young-woman',
+      {
+        specialty: 'Ortopedista',
+        doctorName: 'Dr. Fernando Dias',
+        emissionDate: '18/10/2026',
+        medications: ['Colágeno Tipo II', 'Glucosamina'],
+        cardColor: '#B4ECFB',
+      }
+    );
+
+    assert.ok(created.id, 'Receita deve conter ID');
+    assert.equal(created.specialty, 'Ortopedista');
+
+    // 2. Lista e valida persistência
+    let list = await PrescriptionClientService.listPrescriptions('prof-test-persist', 'Camilla', 'young-woman');
+    assert.equal(list.length, 1);
+    assert.equal(list[0].doctorName, 'Dr. Fernando Dias');
+
+    // 3. Atualiza
+    const updated = await PrescriptionClientService.updatePrescription(
+      'prof-test-persist',
+      created.id,
+      'Camilla',
+      'young-woman',
+      {
+        doctorName: 'Dr. Fernando Dias Jr.',
+        instructions: '1 sachê pela manhã.',
+      }
+    );
+    assert.equal(updated.doctorName, 'Dr. Fernando Dias Jr.');
+
+    // 4. Remove
+    await PrescriptionClientService.deletePrescription('prof-test-persist', created.id);
+    list = await PrescriptionClientService.listPrescriptions('prof-test-persist', 'Camilla', 'young-woman');
+    assert.equal(list.length, 0);
   });
 });

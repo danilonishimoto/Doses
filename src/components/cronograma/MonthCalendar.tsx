@@ -44,7 +44,7 @@ export function MonthCalendar({
   currentMonthDate,
   selectedDate,
   todayDate,
-  activeProfile,
+  activeProfile: _activeProfile,
   getMedicationCount,
   onSelectDate,
   onPrevMonth,

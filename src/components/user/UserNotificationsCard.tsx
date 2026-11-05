@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { notificationService } from '../../services/notificationService';
+import { notificationService, type NotificationPlatformDiagnostics } from '../../services/notificationService';
 
 export function UserNotificationsCard() {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
@@ -8,12 +8,14 @@ export function UserNotificationsCard() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+  const [diag, setDiag] = useState<NotificationPlatformDiagnostics>(notificationService.getDiagnostics());
 
   useEffect(() => {
     async function checkStatus() {
       const status = await notificationService.getPushSubscriptionStatus();
       setPermission(status.permission);
       setIsSubscribed(status.isSubscribed);
+      setDiag(notificationService.getDiagnostics());
     }
     checkStatus();
   }, []);
@@ -107,6 +109,39 @@ export function UserNotificationsCard() {
       <p style={{ margin: 0, fontSize: 14, color: '#4E6D93', lineHeight: 1.4 }}>
         Receba avisos pontuais no horário exato dos medicamentos diretamente neste dispositivo.
       </p>
+
+      {/* Alertas contextuais de plataforma */}
+      {diag.supportStatus === 'insecure-context' && (
+        <div
+          style={{
+            padding: '12px 14px',
+            borderRadius: 12,
+            backgroundColor: '#FFFBEB',
+            border: '1px solid #FCD34D',
+            color: '#92400E',
+            fontSize: 13,
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>⚠️ Contexto HTTP na rede local detectado:</strong> A especificação Web Push exige origem segura (HTTPS ou localhost) para registrar inscrições push em dispositivos móveis.
+        </div>
+      )}
+
+      {diag.supportStatus === 'ios-browser-requires-install' && (
+        <div
+          style={{
+            padding: '12px 14px',
+            borderRadius: 12,
+            backgroundColor: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            color: '#1E40AF',
+            fontSize: 13,
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>📱 Requisito do iOS (Safari):</strong> Toque no botão Compartilhar do Safari e selecione <em>"Adicionar à Tela de Início"</em> para instalar o Doses e liberar o Web Push.
+        </div>
+      )}
 
       {/* Status da permissão */}
       <div style={{ fontSize: 13, color: '#334155', display: 'flex', flexDirection: 'column', gap: 4 }}>

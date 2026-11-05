@@ -4,9 +4,9 @@ import { ApiMedicationRepository } from './apiMedicationRepository';
 
 export type RepositoryDataSource = 'mock' | 'api';
 
-// Configuration point: toggle here or via environment variables
+// Ponto de configuração: por padrão utiliza 'api' para persistência real e sincronização
 export const MEDICATION_REPOSITORY_CONFIG = {
-  dataSource: 'mock' as RepositoryDataSource,
+  dataSource: ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_MEDICATION_DATA_SOURCE) || 'api') as RepositoryDataSource,
   apiUrl: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '/api/v1',
   mockLatencyMs: 200,
 };
@@ -15,7 +15,7 @@ let activeRepositoryInstance: MedicationRepository | null = null;
 let activeMockInstance: MockMedicationRepository | null = null;
 
 /**
- * Returns the singleton MedicationRepository according to the current configuration.
+ * Retorna a instância ativa do repositório conforme a configuração.
  */
 export function getMedicationRepository(): MedicationRepository {
   if (!activeRepositoryInstance) {
@@ -35,7 +35,7 @@ export function getMedicationRepository(): MedicationRepository {
 }
 
 /**
- * Convenience helper to access the mock repository directly for testing and error simulation.
+ * Atalho para testes unitários acessarem o mock diretamente.
  */
 export function getMockMedicationRepository(): MockMedicationRepository {
   const repo = getMedicationRepository();
@@ -52,13 +52,11 @@ export function getMockMedicationRepository(): MockMedicationRepository {
 }
 
 /**
- * Dynamically switch the data source at runtime (e.g. for testing or feature flags).
+ * Altera dinamicamente a fonte de dados (útil para testes de UI ou alternância de flags).
  */
 export function setMedicationDataSource(source: RepositoryDataSource): void {
   MEDICATION_REPOSITORY_CONFIG.dataSource = source;
-  activeRepositoryInstance = null; // Re-create on next getMedicationRepository call
+  activeRepositoryInstance = null; // Recria na próxima chamada
 }
 
-export * from './medicationRepository';
-export * from './mockMedicationRepository';
-export * from './apiMedicationRepository';
+export { MockMedicationRepository, ApiMedicationRepository };

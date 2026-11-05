@@ -1,7 +1,10 @@
+import { apiClient } from './api/apiClient';
+
 export type NotificationSupportStatus =
   | 'supported'
   | 'unsupported'
-  | 'ios-browser-requires-install';
+  | 'ios-browser-requires-install'
+  | 'insecure-context';
 
 export interface NotificationPlatformDiagnostics {
   supportStatus: NotificationSupportStatus;
@@ -10,6 +13,7 @@ export interface NotificationPlatformDiagnostics {
   isIOS: boolean;
   hasPushManager: boolean;
   hasServiceWorker: boolean;
+  isSecureContext?: boolean;
 }
 
 export interface PushSubscriptionResult {
@@ -44,6 +48,7 @@ export const notificationService = {
         isIOS: false,
         hasPushManager: false,
         hasServiceWorker: false,
+        isSecureContext: false,
       };
     }
 
@@ -56,6 +61,25 @@ export const notificationService = {
     const hasNotificationAPI = 'Notification' in window;
     const hasServiceWorker = 'serviceWorker' in navigator;
     const hasPushManager = 'PushManager' in window;
+    const hostname =
+      typeof window !== 'undefined' && window.location
+        ? window.location.hostname
+        : 'localhost';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isSecure = typeof window !== 'undefined' && 'isSecureContext' in window ? Boolean(window.isSecureContext) : true;
+
+    // Validação de contexto seguro (W3C Secure Context)
+    if (!isSecure && !isLocalhost) {
+      return {
+        supportStatus: 'insecure-context',
+        permission: hasNotificationAPI ? Notification.permission : 'unsupported',
+        isStandalonePWA,
+        isIOS,
+        hasPushManager,
+        hasServiceWorker,
+        isSecureContext: false,
+      };
+    }
 
     if (!hasNotificationAPI || !hasServiceWorker) {
       if (isIOS && !isStandalonePWA) {
@@ -66,6 +90,7 @@ export const notificationService = {
           isIOS,
           hasPushManager,
           hasServiceWorker,
+          isSecureContext: isSecure || isLocalhost,
         };
       }
       return {
@@ -75,6 +100,7 @@ export const notificationService = {
         isIOS,
         hasPushManager,
         hasServiceWorker,
+        isSecureContext: isSecure || isLocalhost,
       };
     }
 
@@ -85,6 +111,7 @@ export const notificationService = {
       isIOS,
       hasPushManager,
       hasServiceWorker,
+      isSecureContext: isSecure || isLocalhost,
     };
   },
 
@@ -109,7 +136,8 @@ export const notificationService = {
    * Consulta a chave pública VAPID configurada no backend.
    */
   async fetchVapidPublicKey(): Promise<string> {
-    const res = await fetch('/api/v1/vapid-public-key');
+    const baseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '/api/v1';
+    const res = await fetch(`${baseUrl}/vapid-public-key`);
     if (!res.ok) {
       throw new Error(`Falha ao obter chave pública VAPID (${res.status}): ${res.statusText}`);
     }
@@ -130,6 +158,20 @@ export const notificationService = {
   }): Promise<PushSubscriptionResult> {
     if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) {
       return { success: false, error: 'Web Push não suportado neste navegador.' };
+    }
+
+    const hostname =
+      typeof window !== 'undefined' && window.location
+        ? window.location.hostname
+        : 'localhost';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isSecure = typeof window !== 'undefined' && 'isSecureContext' in window ? Boolean(window.isSecureContext) : true;
+
+    if (!isSecure && !isLocalhost) {
+      return {
+        success: false,
+        error: 'Contexto não seguro: Web Push exige conexão segura (HTTPS ou localhost). Para testar no celular via IP da rede local, configure HTTPS ou habilite a flag de origem segura.',
+      };
     }
 
     // 1. Garante permissão concedida
@@ -175,7 +217,7 @@ export const notificationService = {
       const auth = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(rawAuth))));
 
       // 5. Envia a subscription para persistência no backend SQLite
-      const token = options?.authToken || (typeof localStorage !== 'undefined' ? localStorage.getItem('doses_access_token') : null);
+      const token = options?.authToken || apiClient.getAccessToken();
       if (!token) {
         return {
           success: false,
@@ -187,7 +229,8 @@ export const notificationService = {
         options?.deviceName ||
         (navigator.userAgent.includes('Mobile') ? 'Smartphone' : 'Computador');
 
-      const backendResponse = await fetch('/api/v1/push-subscriptions', {
+      const baseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || '/api/v1';
+      const backendResponse = await fetch(`${baseUrl}/push-subscriptions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

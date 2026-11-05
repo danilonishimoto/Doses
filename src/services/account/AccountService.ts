@@ -1,6 +1,7 @@
 import { db } from '../database/db';
 import type { Account } from '../../types';
 import { hashPassword } from '../../utils/crypto';
+import { apiClient } from '../api/apiClient';
 
 export class AccountService {
   static async createAccount(username: string, plainPassword: string): Promise<Account> {
@@ -8,8 +9,8 @@ export class AccountService {
     if (!trimmedUsername) {
       throw new Error('O nome de usuário é obrigatório.');
     }
-    if (!plainPassword || plainPassword.length < 4) {
-      throw new Error('A senha deve conter no mínimo 4 caracteres.');
+    if (!plainPassword || plainPassword.length < 8) {
+      throw new Error('A senha deve conter no mínimo 8 caracteres.');
     }
 
     const existing = await db.accounts.where('username').equalsIgnoreCase(trimmedUsername).first();
@@ -17,9 +18,12 @@ export class AccountService {
       throw new Error('Este nome de usuário já está cadastrado. Escolha outro.');
     }
 
+    // 1. Tenta cadastrar no backend se estiver online
+    const remoteData = await syncBackendRegister(trimmedUsername, plainPassword);
+
     const { hash, salt } = await hashPassword(plainPassword);
     const account: Account = {
-      id: crypto.randomUUID(),
+      id: remoteData?.account?.id || crypto.randomUUID(),
       username: trimmedUsername,
       passwordHash: hash,
       salt,
@@ -28,7 +32,6 @@ export class AccountService {
 
     await db.accounts.add(account);
     this.setActiveAccountId(account.id);
-    await syncBackendAuth(trimmedUsername, plainPassword);
     return account;
   }
 
@@ -49,18 +52,37 @@ export class AccountService {
       throw new Error('Informe a senha.');
     }
 
-    const account = await this.getAccountByUsername(trimmedUsername);
-    if (!account) {
+    let account = await this.getAccountByUsername(trimmedUsername);
+
+    if (account) {
+      // Conta existe localmente: valida hash local
+      const { hash } = await hashPassword(plainPassword, account.salt);
+      if (hash !== account.passwordHash) {
+        throw new Error('Usuário ou senha incorretos.');
+      }
+      this.setActiveAccountId(account.id);
+      await syncBackendLogin(trimmedUsername, plainPassword);
+      return account;
+    }
+
+    // Conta NÃO existe localmente (ex: primeiro login neste dispositivo): tenta autenticar no backend
+    const remoteData = await syncBackendLogin(trimmedUsername, plainPassword);
+    if (!remoteData || !remoteData.account) {
       throw new Error('Usuário ou senha incorretos.');
     }
 
-    const { hash } = await hashPassword(plainPassword, account.salt);
-    if (hash !== account.passwordHash) {
-      throw new Error('Usuário ou senha incorretos.');
-    }
+    // Cria registro no Dexie local para manter disponibilidade offline
+    const { hash, salt } = await hashPassword(plainPassword);
+    account = {
+      id: remoteData.account.id,
+      username: trimmedUsername,
+      passwordHash: hash,
+      salt,
+      createdAt: remoteData.account.createdAt || new Date().toISOString(),
+    };
 
+    await db.accounts.put(account);
     this.setActiveAccountId(account.id);
-    await syncBackendAuth(trimmedUsername, plainPassword);
     return account;
   }
 
@@ -87,21 +109,38 @@ export class AccountService {
   }
 
   static clearActiveAccount(): void {
+    // Tenta revogar a sessão no backend
+    const token = apiClient.getAccessToken();
+    if (token) {
+      apiClient.post('/auth/logout').catch(() => null);
+    }
+
+    apiClient.clearTokens();
+
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('doses_active_account_id');
-      localStorage.removeItem('doses_access_token');
-      localStorage.removeItem('doses_refresh_token');
-      localStorage.removeItem('doses_backend_account_id');
       localStorage.removeItem('doses_push_subscribed');
       localStorage.removeItem('doses_push_subscription_id');
     }
   }
 }
 
-async function syncBackendAuth(username: string, plainPassword: string) {
-  if (typeof window === 'undefined' || typeof fetch === 'undefined') return;
+function getBaseUrl() {
+  return (
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
+    ((globalThis as any).process?.env?.VITE_API_URL) ||
+    (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin !== 'null'
+      ? '/api/v1'
+      : 'http://localhost:3333/api/v1')
+  );
+}
+
+async function syncBackendRegister(username: string, plainPassword: string) {
+  if (typeof fetch === 'undefined') return null;
+  const baseUrl = getBaseUrl();
+
   try {
-    const res = await fetch('/api/v1/auth/login', {
+    const res = await fetch(`${baseUrl}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password: plainPassword }),
@@ -109,31 +148,59 @@ async function syncBackendAuth(username: string, plainPassword: string) {
 
     if (res.ok) {
       const data = await res.json();
-      if (data.accessToken && typeof localStorage !== 'undefined') {
-        localStorage.setItem('doses_access_token', data.accessToken);
-        localStorage.setItem('doses_refresh_token', data.refreshToken);
-        localStorage.setItem('doses_backend_account_id', data.account.id);
+      if (data.accessToken && data.refreshToken) {
+        apiClient.setTokens(data.accessToken, data.refreshToken);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('doses_backend_account_id', data.account.id);
+        }
       }
       return data;
     }
 
-    if (res.status === 401 || res.status === 404 || res.status === 400) {
-      const regRes = await fetch('/api/v1/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password: plainPassword }),
-      });
-      if (regRes.ok) {
-        const data = await regRes.json();
-        if (data.accessToken && typeof localStorage !== 'undefined') {
-          localStorage.setItem('doses_access_token', data.accessToken);
-          localStorage.setItem('doses_refresh_token', data.refreshToken);
+    if (res.status === 409) {
+      throw new Error('Este nome de usuário já está cadastrado no servidor.');
+    }
+
+    if (res.status === 400) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || 'Dados inválidos para criação de conta.');
+    }
+  } catch (err: any) {
+    if (err.message && (err.message.includes('cadastrado') || err.message.includes('inválidos'))) {
+      throw err;
+    }
+    console.warn('[AccountService] Backend offline, prosseguindo com criação de conta local no IndexedDB.');
+  }
+  return null;
+}
+
+async function syncBackendLogin(username: string, plainPassword: string) {
+  if (typeof fetch === 'undefined') return null;
+  const baseUrl = getBaseUrl();
+
+  try {
+    const res = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password: plainPassword }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.accessToken && data.refreshToken) {
+        apiClient.setTokens(data.accessToken, data.refreshToken);
+        if (typeof localStorage !== 'undefined') {
           localStorage.setItem('doses_backend_account_id', data.account.id);
         }
-        return data;
       }
+      return data;
+    }
+
+    if (res.status === 401) {
+      return null;
     }
   } catch (err) {
     console.warn('[AccountService] Backend offline, prosseguindo com autenticação local IndexedDB.');
   }
+  return null;
 }

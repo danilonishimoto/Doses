@@ -1,5 +1,6 @@
 import { db } from '../database/db';
 import type { AvatarId, Profile } from '../../types';
+import { apiClient } from '../api/apiClient';
 
 export interface CreateProfileData {
   accountId: string;
@@ -45,9 +46,30 @@ export class ProfileService {
       }
     }
 
+    let remoteId: string | null = null;
+    const token = apiClient.getAccessToken();
+    if (token) {
+      try {
+        const res = await apiClient.post<{ statusCode: number; profile: { id: string } }>('/profiles', {
+          name: trimmedName,
+          surname: trimmedSurname,
+          avatar: data.avatar,
+          isMainProfile: Boolean(data.isMainProfile),
+        });
+        if (res && res.profile && res.profile.id) {
+          remoteId = res.profile.id;
+        }
+      } catch (err: any) {
+        if (err && typeof err.statusCode === 'number' && err.statusCode >= 400) {
+          throw err;
+        }
+        console.warn('[ProfileService] Backend offline, salvando perfil localmente:', err);
+      }
+    }
+
     const now = new Date().toISOString();
     const profile: Profile = {
-      id: crypto.randomUUID(),
+      id: remoteId || crypto.randomUUID(),
       accountId: data.accountId,
       name: trimmedName,
       surname: trimmedSurname,
@@ -65,10 +87,48 @@ export class ProfileService {
   }
 
   static async getProfilesByAccount(accountId: string): Promise<Profile[]> {
-    return db.profiles
+    // 1. Lê os dados locais do IndexedDB para resposta imediata
+    let localProfiles = await db.profiles
       .where('accountId')
       .equals(accountId)
       .sortBy('createdAt');
+
+    // 2. Se houver autenticação ativa, sincroniza perfis remotos do backend
+    const token = apiClient.getAccessToken();
+    if (token) {
+      try {
+        const res = await apiClient.get<{ profiles: any[] }>('/profiles');
+        if (res && Array.isArray(res.profiles)) {
+          for (const rem of res.profiles) {
+            const existing = await db.profiles.get(rem.id);
+            if (!existing) {
+              const newProfile: Profile = {
+                id: rem.id,
+                accountId,
+                name: rem.name,
+                surname: rem.surname || '',
+                age: 30, // Padrão se não informado no backend
+                weight: 70,
+                height: 170,
+                avatar: (rem.avatar as AvatarId) || 'young-woman',
+                isMainProfile: Boolean(rem.isMainProfile),
+                createdAt: rem.createdAt || new Date().toISOString(),
+                updatedAt: rem.updatedAt || new Date().toISOString(),
+              };
+              await db.profiles.add(newProfile);
+            }
+          }
+          localProfiles = await db.profiles
+            .where('accountId')
+            .equals(accountId)
+            .sortBy('createdAt');
+        }
+      } catch (err) {
+        // Modo offline: continua com os dados locais
+      }
+    }
+
+    return localProfiles;
   }
 
   static async getMainProfile(accountId: string): Promise<Profile | undefined> {
@@ -117,7 +177,41 @@ export class ProfileService {
     };
 
     await db.profiles.put(updated);
+
+    const token = apiClient.getAccessToken();
+    if (token) {
+      try {
+        await apiClient.patch(`/profiles/${encodeURIComponent(id)}`, {
+          name: updated.name,
+          surname: updated.surname,
+          avatar: updated.avatar,
+          isMainProfile: updated.isMainProfile,
+        });
+      } catch (err: any) {
+        if (err && typeof err.statusCode === 'number' && err.statusCode >= 400) {
+          throw err;
+        }
+        console.warn('[ProfileService] Erro ao sincronizar atualização no backend:', err);
+      }
+    }
+
     return updated;
+  }
+
+  static async deleteProfile(id: string): Promise<void> {
+    await db.profiles.delete(id);
+
+    const token = apiClient.getAccessToken();
+    if (token) {
+      try {
+        await apiClient.delete(`/profiles/${encodeURIComponent(id)}`);
+      } catch (err: any) {
+        if (err && typeof err.statusCode === 'number' && err.statusCode >= 400) {
+          throw err;
+        }
+        console.warn('[ProfileService] Erro ao sincronizar exclusão de perfil no backend:', err);
+      }
+    }
   }
 
   static setActiveProfileId(id: string): void {

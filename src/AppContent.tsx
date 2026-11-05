@@ -75,7 +75,7 @@ export function AppContent() {
         <CreateAccountScreen
           initialUsername={onboardingDraft.username}
           initialPassword={onboardingDraft.password}
-          onNavigateToLogin={hasAccountsInDb ? () => setOnboardingSubstep('login') : undefined}
+          onNavigateToLogin={() => setOnboardingSubstep('login')}
           onSuccess={async (account, creds) => {
             if (creds) {
               setOnboardingDraft((prev) => ({

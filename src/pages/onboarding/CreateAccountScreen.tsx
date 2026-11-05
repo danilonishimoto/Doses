@@ -48,8 +48,8 @@ export function CreateAccountScreen({
     if (!password) {
       setPasswordError('Por favor, crie sua senha.');
       hasError = true;
-    } else if (password.length < 4) {
-      setPasswordError('A senha deve ter pelo menos 4 caracteres.');
+    } else if (password.length < 8) {
+      setPasswordError('A senha deve ter pelo menos 8 caracteres.');
       hasError = true;
     }
 

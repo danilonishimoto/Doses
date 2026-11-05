@@ -10,6 +10,8 @@ import { handleSubscriptionRoutes } from './api/subscriptionRoutes.js';
 import { ProfileService } from './services/profileService.js';
 import { MedicationService } from './services/medicationService.js';
 import { MedicationTimeService } from './services/medicationTimeService.js';
+import { OccurrenceService } from './services/occurrenceService.js';
+import { SchedulerService } from './services/schedulerService.js';
 import { handleProfileRoutes } from './api/profileRoutes.js';
 import { handleMedicationRoutes } from './api/medicationRoutes.js';
 
@@ -26,6 +28,8 @@ const subscriptionService = new SubscriptionService();
 const profileService = new ProfileService();
 const medicationService = new MedicationService();
 const medicationTimeService = new MedicationTimeService();
+const occurrenceService = new OccurrenceService();
+const schedulerService = new SchedulerService({ intervalMs: 30000, horizonDays: 2 });
 
 // 3. Configura chaves VAPID
 const vapidConfigured = configureVapid();
@@ -64,6 +68,7 @@ const server = http.createServer((req, res) => {
         timezone: env.APP_TIMEZONE,
         tablesCount: tables.count,
         vapidConfigured,
+        schedulerRunning: schedulerService.getIsRunning(),
         timestamp: new Date().toISOString(),
       })
     );
@@ -105,7 +110,7 @@ const server = http.createServer((req, res) => {
 
   // Rotas de Perfis (/api/v1/profiles*)
   if (url.pathname.startsWith('/api/v1/profiles')) {
-    handleProfileRoutes(req, res, profileService, medicationService, authService).catch((err) => {
+    handleProfileRoutes(req, res, profileService, medicationService, authService, occurrenceService).catch((err) => {
       console.error('[HTTP Profile Error]', err);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ statusCode: 500, error: 'Internal Server Error' }));
@@ -131,11 +136,19 @@ const server = http.createServer((req, res) => {
 server.listen(env.PORT, env.HOST, () => {
   console.log(`[HTTP] Servidor Doses ouvindo em http://${env.HOST}:${env.PORT}`);
   console.log(`[HTTP] Health check disponível em: http://${env.HOST}:${env.PORT}/api/v1/health`);
+
+  // 5. Inicia o agendador automático contínuo
+  schedulerService.start();
 });
 
 // Encerramento gracioso
-const shutdown = () => {
+const shutdown = async () => {
   console.log('\n[Shutdown] Encerrando servidor e conexões...');
+  try {
+    await schedulerService.stop(5000);
+  } catch (err) {
+    console.error('[Shutdown] Erro ao parar scheduler:', err);
+  }
   server.close(() => {
     closeDatabase();
     console.log('[Shutdown] Recursos liberados com sucesso.');

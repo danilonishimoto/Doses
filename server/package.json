@@ -24,6 +24,7 @@
     "test:generator": "tsx src/services/occurrenceGenerator.test.ts",
     "test:dispatch": "tsx src/services/pushDispatcherService.test.ts",
     "test:multidevice": "tsx src/services/multiDeviceIntegration.test.ts",
+    "test:scheduler": "tsx src/services/schedulerService.test.ts",
     "dispatch:once": "tsx scripts/dispatchOnce.ts"
   },
   "dependencies": {

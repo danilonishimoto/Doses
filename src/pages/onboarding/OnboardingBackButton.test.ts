@@ -85,4 +85,56 @@ test('Navegação do Botão Voltar no Onboarding e Preservação de Dados', asyn
       height: '165',
     });
   });
+
+  await t.test('2. Botão Voltar da tela de cadastro deve transicionar para tela de login mesmo com hasAccountsInDb false', async () => {
+    let onboardingSubstep: string | null = 'create-account';
+    const hasAccountsInDb = false;
+
+    // Função que decide qual tela renderizar (mesma regra de AppContent)
+    function shouldShowCreateAccount(substep: string | null, hasAccounts: boolean) {
+      return (substep === 'create-account' || !hasAccounts) && substep !== 'login';
+    }
+
+    assert.equal(shouldShowCreateAccount(onboardingSubstep, hasAccountsInDb), true);
+
+    // Usuário clica no botão "Voltar" ou "Já possui uma conta? Entrar"
+    const onNavigateToLogin = () => {
+      onboardingSubstep = 'login';
+    };
+
+    onNavigateToLogin();
+
+    // Deve transicionar para LoginScreen, não ficando preso em CreateAccountScreen
+    assert.equal(onboardingSubstep, 'login');
+    assert.equal(shouldShowCreateAccount(onboardingSubstep, hasAccountsInDb), false);
+  });
+
+  await t.test('3. Verificação de regras de CSS e safe area para PWA standalone no iOS', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const cssPath = path.resolve(process.cwd(), 'src/styles/global.css');
+    const cssContent = fs.readFileSync(cssPath, 'utf-8');
+
+    // Safe area no topo para não ficar sob a barra de status / Dynamic Island do iOS
+    assert.ok(
+      cssContent.includes('padding-top: env(safe-area-inset-top, 0px);'),
+      'onboarding-screen deve respeitar safe-area-inset-top para botões do header no iOS PWA'
+    );
+
+    // Não deve conter -webkit-fill-available que quebra hit-testing no flexbox do WebKit standalone
+    assert.ok(
+      !cssContent.includes('-webkit-fill-available'),
+      'Não deve usar -webkit-fill-available em containers com flexbox no iOS'
+    );
+
+    // touch-action: manipulation no botão voltar e no botão primário
+    assert.ok(
+      cssContent.includes('.header-back-button') && cssContent.includes('touch-action: manipulation;'),
+      '.header-back-button deve ter touch-action: manipulation'
+    );
+    assert.ok(
+      cssContent.includes('.primary-action-button') && cssContent.includes('touch-action: manipulation;'),
+      '.primary-action-button deve ter touch-action: manipulation'
+    );
+  });
 });

@@ -23,6 +23,9 @@ caServer.listen(5175, '0.0.0.0', () => {
 
 // 2. Servidor HTTPS Reverso na porta 8443 com certificado SAN válido
 const httpsProxy = https.createServer({ key, cert }, (req, res) => {
+  const clientIp = req.socket.remoteAddress;
+  console.log(`[PROXY IN] ${req.method} ${req.url} (IP: ${clientIp})`);
+
   if (req.url === '/doses-ca.crt') {
     res.writeHead(200, {
       'Content-Type': 'application/x-x509-ca-cert',
@@ -42,11 +45,13 @@ const httpsProxy = https.createServer({ key, cert }, (req, res) => {
       'x-forwarded-proto': 'https'
     }
   }, (clientRes) => {
+    console.log(`[PROXY OUT] ${req.method} ${req.url} -> ${clientRes.statusCode}`);
     res.writeHead(clientRes.statusCode, clientRes.headers);
     clientRes.pipe(res);
   });
 
   clientReq.on('error', (err) => {
+    console.error(`[PROXY ERROR] ${req.method} ${req.url} -> ${err.message}`);
     res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Erro no Proxy Gateway: ' + err.message);
   });

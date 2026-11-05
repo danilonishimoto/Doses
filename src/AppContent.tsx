@@ -69,8 +69,8 @@ export function AppContent() {
 
   // 1. Se não há conta autenticada na sessão atual
   if (!currentAccount) {
-    // Se o usuário solicitou explicitamente criar conta OU se não há nenhuma conta no sistema
-    if (onboardingSubstep === 'create-account' || !hasAccountsInDb) {
+    // Se o usuário solicitou explicitamente criar conta OU se não há nenhuma conta no sistema (e não solicitou login)
+    if ((onboardingSubstep === 'create-account' || !hasAccountsInDb) && onboardingSubstep !== 'login') {
       return (
         <CreateAccountScreen
           initialUsername={onboardingDraft.username}

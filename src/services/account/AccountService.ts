@@ -61,7 +61,11 @@ export class AccountService {
         throw new Error('Usuário ou senha incorretos.');
       }
       this.setActiveAccountId(account.id);
-      await syncBackendLogin(trimmedUsername, plainPassword);
+      try {
+        await syncBackendLogin(trimmedUsername, plainPassword);
+      } catch (syncErr) {
+        console.warn('[AccountService] Login local mantido, sincronização remota indisponível:', syncErr);
+      }
       return account;
     }
 
@@ -197,10 +201,37 @@ async function syncBackendLogin(username: string, plainPassword: string) {
     }
 
     if (res.status === 401) {
-      return null;
+      throw new Error('Usuário ou senha incorretos.');
     }
-  } catch (err) {
-    console.warn('[AccountService] Backend offline, prosseguindo com autenticação local IndexedDB.');
+
+    if (res.status === 429) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || 'Muitas tentativas de login falhas. Tente novamente mais tarde.');
+    }
+
+    if (res.status === 400) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.message || 'Dados de login inválidos.');
+    }
+
+    if (res.status >= 500) {
+      throw new Error('Serviço temporariamente indisponível no servidor.');
+    }
+  } catch (err: any) {
+    if (
+      err.message &&
+      (err.message.includes('incorretos') ||
+        err.message.includes('tentativas') ||
+        err.message.includes('inválidos') ||
+        err.message.includes('indisponível'))
+    ) {
+      throw err;
+    }
+
+    console.warn('[AccountService] Erro de rede ou backend offline:', err);
+    if (typeof window !== 'undefined') {
+      throw new Error('Não foi possível conectar ao servidor. Verifique a conexão de rede.');
+    }
   }
   return null;
 }

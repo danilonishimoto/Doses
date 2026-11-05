@@ -93,7 +93,12 @@ export function CreateAccountScreen({
           </p>
         </div>
 
-        <form id="create-account-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <form
+          id="create-account-form"
+          onSubmit={handleSubmit}
+          noValidate
+          style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+        >
           {generalError && (
             <div
               style={{
@@ -165,6 +170,18 @@ export function CreateAccountScreen({
           form="create-account-form"
           className="primary-action-button"
           disabled={isSubmitting}
+          onClick={(e) => {
+            const form = document.getElementById('create-account-form') as HTMLFormElement | null;
+            if (form && typeof form.requestSubmit === 'function') {
+              try {
+                form.requestSubmit();
+                return;
+              } catch {
+                // Fallback caso ocorra restrição de submit no WebKit standalone
+              }
+            }
+            handleSubmit(e);
+          }}
         >
           {isSubmitting ? 'Criando conta...' : 'Continuar'}
         </button>

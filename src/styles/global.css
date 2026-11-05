@@ -53,12 +53,12 @@
 
   body {
     min-height: 100vh;
-    min-height: -webkit-fill-available;
     min-height: 100dvh;
     line-height: 1.5;
     text-align: start;
     overflow-wrap: break-word;
     background-color: #FFFFFF;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1, h2, h3, h4 {
@@ -83,7 +83,6 @@
   /* Layout Mobile-First idêntico ao Figma (402px largura de referência, responsivo até desktops) */
   .onboarding-screen {
     min-height: 100vh;
-    min-height: -webkit-fill-available;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -93,7 +92,10 @@
     margin-inline: auto;
     background-color: #FFFFFF;
     position: relative;
+    padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .onboarding-header {
@@ -103,6 +105,8 @@
     height: 82px;
     padding-inline: 24px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 10;
   }
 
   .header-back-button {
@@ -113,6 +117,12 @@
     cursor: pointer;
     padding: 0;
     color: #000000;
+    position: relative;
+    z-index: 10;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .back-icon-box {
@@ -267,6 +277,8 @@
   .onboarding-footer {
     padding: 16px 24px 34px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 10;
   }
 
   .primary-action-button {
@@ -286,6 +298,12 @@
     font-weight: 700;
     line-height: normal;
     transition: transform 0.1s ease, opacity 0.15s ease;
+    position: relative;
+    z-index: 10;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   .primary-action-button:hover:not(:disabled) {
@@ -415,6 +433,10 @@
     font-weight: 600;
     color: #000000;
     transition: background-color 0.15s ease;
+    position: relative;
+    z-index: 10;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .add-other-person-button:hover {
@@ -423,6 +445,7 @@
 
   /* --- TELAS DE SELEÇÃO DE PERFIL ("ENTRAR · [NOME]") --- */
   .profile-entry-screen {
+    min-height: 100vh;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -432,7 +455,10 @@
     margin-inline: auto;
     background-color: #FFFFFF;
     position: relative;
+    padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .profile-entry-header {

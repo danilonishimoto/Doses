@@ -67,6 +67,7 @@ export function LoginScreen({ onSuccess, onNavigateToCreateAccount }: LoginScree
         <form
           id="login-form"
           onSubmit={handleSubmit}
+          noValidate
           style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
         >
           {generalError && (
@@ -144,6 +145,18 @@ export function LoginScreen({ onSuccess, onNavigateToCreateAccount }: LoginScree
           className="primary-action-button"
           disabled={isSubmitting}
           aria-label="Entrar na conta"
+          onClick={(e) => {
+            const form = document.getElementById('login-form') as HTMLFormElement | null;
+            if (form && typeof form.requestSubmit === 'function') {
+              try {
+                form.requestSubmit();
+                return;
+              } catch {
+                // Fallback caso ocorra restrição de submit no WebKit standalone
+              }
+            }
+            handleSubmit(e);
+          }}
         >
           {isSubmitting ? 'Entrando...' : 'Entrar'}
         </button>

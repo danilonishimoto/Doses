@@ -338,7 +338,7 @@ console.log('\n--- BLOCO 4: Migração Segura e Preservação de Dados (Subetapa
         applied_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
-  for (const m of ALL_MIGRATIONS.filter((m) => m.version !== '006')) {
+  for (const m of ALL_MIGRATIONS.filter((m) => m.version < '006')) {
     m.up(legacyDb);
     legacyDb.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(m.version, m.name);
   }
@@ -398,7 +398,7 @@ console.log('\n--- BLOCO 4: Migração Segura e Preservação de Dados (Subetapa
         applied_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
-  for (const m of ALL_MIGRATIONS.filter((m) => m.version !== '006')) {
+  for (const m of ALL_MIGRATIONS.filter((m) => m.version < '006')) {
     m.up(inconsistentDb);
     inconsistentDb.prepare('INSERT INTO schema_migrations (version, name) VALUES (?, ?)').run(m.version, m.name);
   }

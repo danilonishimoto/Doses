@@ -69,16 +69,30 @@ export function MainProfileScreen({
 
     try {
       setIsSubmitting(true);
-      const profile = await ProfileService.createProfile({
-        accountId,
-        name: name.trim(),
-        surname: surname.trim(),
-        age: numAge,
-        weight: numWeight,
-        height: numHeight,
-        avatar,
-        isMainProfile: true,
-      });
+      const existingMain = await ProfileService.getMainProfile(accountId);
+      let profile: Profile;
+      if (existingMain) {
+        profile = await ProfileService.updateProfile(existingMain.id, {
+          name: name.trim(),
+          surname: surname.trim(),
+          age: numAge,
+          weight: numWeight,
+          height: numHeight,
+          avatar,
+          isMainProfile: true,
+        });
+      } else {
+        profile = await ProfileService.createProfile({
+          accountId,
+          name: name.trim(),
+          surname: surname.trim(),
+          age: numAge,
+          weight: numWeight,
+          height: numHeight,
+          avatar,
+          isMainProfile: true,
+        });
+      }
       onSuccess(profile);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Falha ao salvar perfil principal.';

@@ -3,9 +3,9 @@ import { useApp } from '../../hooks/useApp';
 import { MonthCalendar } from '../../components/cronograma/MonthCalendar';
 import { WeekCalendar } from '../../components/cronograma/WeekCalendar';
 import { MedicationCard } from '../../components/home/MedicationCard';
-import { getScheduleForDate, formatDateToDateKey } from '../../mocks/cronograma/cronograma.mock';
+import { useDailyDoses, getTodaySaoPauloDate } from '../../features/medications/hooks/useDailyDoses';
+import { useMonthMedicationCounts, formatDateToDateKey } from '../../features/medications/hooks/useMonthMedicationCounts';
 import { FileTextIcon } from '../../assets/icons';
-import type { DailyMedicationItem } from '../../types';
 
 type CalendarViewMode = 'week' | 'month';
 
@@ -37,43 +37,41 @@ const MONTH_NAMES_LOWER = [
 export function CronogramaScreen() {
   const { activeProfile } = useApp();
 
-  // Data de referência do protótipo do Figma: 19 de outubro de 2026
-  const [todayDate] = useState(() => new Date(2026, 9, 19));
+  // Data de referência real de hoje no fuso oficial America/Sao_Paulo
+  const [todayDate] = useState(() => {
+    const todayStr = getTodaySaoPauloDate();
+    const [y, m, d] = todayStr.split('-').map(Number);
+    return new Date(y!, m! - 1, d!);
+  });
 
   // Mês em exibição no calendário mensal
-  const [currentMonthDate, setCurrentMonthDate] = useState(() => new Date(2026, 9, 1));
+  const [currentMonthDate, setCurrentMonthDate] = useState(
+    () => new Date(todayDate.getFullYear(), todayDate.getMonth(), 1)
+  );
 
-  // Data selecionada pelo usuário (padrão inicial: 19 de outubro)
-  const [selectedDate, setSelectedDate] = useState(() => new Date(2026, 9, 19));
+  // Data selecionada pelo usuário (padrão inicial: hoje)
+  const [selectedDate, setSelectedDate] = useState(todayDate);
 
   // Modo de visualização: 'month' (padrão Figma) ou 'week'
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
 
-  // Cache em memória das medicações por data para permitir toggle de status interativo
-  const [medicationsCache, setMedicationsCache] = useState<{ [dateKey: string]: DailyMedicationItem[] }>({});
-
   const selectedDateKey = useMemo(() => formatDateToDateKey(selectedDate), [selectedDate]);
 
-  // Lista de medicações do dia selecionado
-  const currentMedications = useMemo(() => {
-    if (medicationsCache[selectedDateKey]) {
-      return medicationsCache[selectedDateKey];
-    }
-    return getScheduleForDate(selectedDate, activeProfile);
-  }, [selectedDate, selectedDateKey, activeProfile, medicationsCache]);
+  // Busca ocorrências reais do dia selecionado pelo mesmo endpoint/contrato da HomeScreen
+  const {
+    doses: currentMedications,
+    isLoading,
+    toggleDoseStatus,
+  } = useDailyDoses({
+    activeProfile,
+    targetDate: selectedDateKey,
+  });
 
-  const handleToggleMedicationStatus = (medId: string) => {
-    const updated = currentMedications.map((m) =>
-      m.id === medId
-        ? { ...m, status: (m.status === 'completed' ? 'pending' : 'completed') as DailyMedicationItem['status'] }
-        : m
-    );
-
-    setMedicationsCache((prev) => ({
-      ...prev,
-      [selectedDateKey]: updated,
-    }));
-  };
+  // Indicadores reais de pontos por dia no calendário mensal
+  const { getMedicationCount } = useMonthMedicationCounts({
+    activeProfile,
+    currentMonthDate,
+  });
 
   const handleSelectDate = (newDate: Date) => {
     setSelectedDate(newDate);
@@ -150,15 +148,15 @@ export function CronogramaScreen() {
         className="cronograma-content"
         style={{
           width: '100%',
-          padding: '24px 24px 140px 24px',
+          padding: '24px 24px calc(140px + env(safe-area-inset-bottom, 0px)) 24px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
-          gap: 24,
+          gap: 20,
         }}
       >
-        {/* Título da tela (Figma: 36px Urbanist SemiBold) */}
-        <header style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Título da tela */}
+        <header>
           <h1
             style={{
               fontFamily: 'var(--font-heading)',
@@ -173,16 +171,16 @@ export function CronogramaScreen() {
           </h1>
         </header>
 
-        {/* Seletor de Modo Semana / Mês (Figma 228:3796) */}
+        {/* Alternador de Modo: Semana / Mês (Figma 241:7637) */}
         <div
+          className="calendar-mode-toggle"
+          role="tablist"
+          aria-label="Visualização do calendário"
           style={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            alignItems: 'center',
             gap: 8,
-            width: '100%',
           }}
-          role="group"
-          aria-label="Modo de visualização do calendário"
         >
           <button
             type="button"
@@ -231,6 +229,7 @@ export function CronogramaScreen() {
             selectedDate={selectedDate}
             todayDate={todayDate}
             activeProfile={activeProfile}
+            getMedicationCount={getMedicationCount}
             onSelectDate={handleSelectDate}
             onPrevMonth={handlePrevMonth}
             onNextMonth={handleNextMonth}
@@ -282,8 +281,23 @@ export function CronogramaScreen() {
             </p>
           </div>
 
+          {/* Carregamento */}
+          {isLoading && (
+            <div
+              style={{
+                padding: '24px 16px',
+                textAlign: 'center',
+                color: '#536579',
+                fontFamily: 'var(--font-body)',
+                fontSize: 14,
+              }}
+            >
+              Carregando programação do dia...
+            </div>
+          )}
+
           {/* Lista de medicamentos ou estado vazio */}
-          {currentMedications.length === 0 ? (
+          {!isLoading && currentMedications.length === 0 ? (
             <div
               className="empty-day-state"
               style={{
@@ -337,22 +351,24 @@ export function CronogramaScreen() {
               </p>
             </div>
           ) : (
-            <div
-              className="medications-schedule-list"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-              }}
-            >
-              {currentMedications.map((item) => (
-                <MedicationCard
-                  key={item.id}
-                  item={item}
-                  onToggleStatus={handleToggleMedicationStatus}
-                />
-              ))}
-            </div>
+            !isLoading && (
+              <div
+                className="medications-schedule-list"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                }}
+              >
+                {currentMedications.map((item) => (
+                  <MedicationCard
+                    key={item.id}
+                    item={item}
+                    onToggleStatus={toggleDoseStatus}
+                  />
+                ))}
+              </div>
+            )
           )}
         </section>
       </div>

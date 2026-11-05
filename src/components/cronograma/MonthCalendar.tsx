@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from '../../assets/icons';
-import { getMedicationCountForDate } from '../../mocks/cronograma/cronograma.mock';
 import type { Profile } from '../../types';
 
 interface MonthCalendarProps {
@@ -8,6 +7,7 @@ interface MonthCalendarProps {
   selectedDate: Date;
   todayDate: Date;
   activeProfile?: Profile | null;
+  getMedicationCount?: (date: Date) => number;
   onSelectDate: (date: Date) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
@@ -45,6 +45,7 @@ export function MonthCalendar({
   selectedDate,
   todayDate,
   activeProfile,
+  getMedicationCount,
   onSelectDate,
   onPrevMonth,
   onNextMonth,
@@ -91,7 +92,7 @@ export function MonthCalendar({
         isCurrentMonth: false,
         isToday,
         isSelected,
-        medicationCount: getMedicationCountForDate(d, activeProfile),
+        medicationCount: getMedicationCount ? getMedicationCount(d) : 0,
       });
     }
 
@@ -113,7 +114,7 @@ export function MonthCalendar({
         isCurrentMonth: true,
         isToday,
         isSelected,
-        medicationCount: getMedicationCountForDate(d, activeProfile),
+        medicationCount: getMedicationCount ? getMedicationCount(d) : 0,
       });
     }
 
@@ -136,12 +137,12 @@ export function MonthCalendar({
         isCurrentMonth: false,
         isToday,
         isSelected,
-        medicationCount: getMedicationCountForDate(d, activeProfile),
+        medicationCount: getMedicationCount ? getMedicationCount(d) : 0,
       });
     }
 
     return days;
-  }, [year, month, selectedDate, todayDate, activeProfile]);
+  }, [year, month, selectedDate, todayDate, getMedicationCount]);
 
   return (
     <section

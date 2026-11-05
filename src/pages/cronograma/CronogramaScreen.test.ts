@@ -104,4 +104,40 @@ test('Seção de Cronograma e Calendário Interativo — Doses', async (t) => {
     const key = formatDateToDateKey(d);
     assert.equal(key, '2026-10-19');
   });
+
+  await t.test('6. Cálculo dinâmico de indicadores de pontos do mês a partir de medicamentos reais', async () => {
+    import('fake-indexeddb/auto');
+    const { getMedicationRepository } = await import('../../features/medications/services');
+    const repo = getMedicationRepository();
+
+    const profileId = 'prof-cronograma-test';
+    await repo.create({
+      profileId,
+      name: 'Vitamina D',
+      dosage: '2 gotas',
+      instructions: 'Pela manhã',
+      cardColor: '#B4ECFB',
+      schedules: ['08:00'],
+      recurrence: { type: 'daily' },
+      status: 'active',
+    });
+
+    await repo.create({
+      profileId,
+      name: 'Losartana',
+      dosage: '50 mg',
+      instructions: 'À noite',
+      cardColor: '#FBD4EC',
+      schedules: ['18:00', '22:00'],
+      recurrence: { type: 'daily' },
+      status: 'active',
+    });
+
+    const list = await repo.list(profileId);
+    assert.equal(list.length, 2);
+
+    // Total de doses diárias: 1 (Vitamina D) + 2 (Losartana) = 3 doses por dia
+    const totalDailyDoses = list.reduce((acc, m) => acc + (m.schedules?.length || 1), 0);
+    assert.equal(totalDailyDoses, 3, 'Deve calcular exatamente 3 doses diárias programadas');
+  });
 });

@@ -73,6 +73,51 @@ export class OccurrenceService {
   }
 
   /**
+   * Lista as ocorrências do perfil dentro de um intervalo de datas civis ('YYYY-MM-DD').
+   */
+  listOccurrencesByDateRange(
+    accountId: string,
+    profileId: string,
+    startDate: string,
+    endDate: string
+  ): DoseOccurrenceDto[] {
+    this.generator.generateOccurrences(45);
+
+    const rows = this.db.prepare(`
+      SELECT 
+        o.id,
+        o.medication_time_id as medicationTimeId,
+        m.id as medicationId,
+        o.profile_id as profileId,
+        o.account_id as accountId,
+        p.name as profileName,
+        p.avatar,
+        m.name as medicationName,
+        m.dosage,
+        m.recurrence,
+        o.scheduled_date as scheduledDate,
+        o.scheduled_time as scheduledTime,
+        o.status,
+        o.confirmed_at as confirmedAt
+      FROM dose_occurrences o
+      JOIN medication_times mt ON o.medication_time_id = mt.id AND o.profile_id = mt.profile_id AND o.account_id = mt.account_id
+      JOIN medications m ON mt.medication_id = m.id AND mt.profile_id = m.profile_id AND mt.account_id = m.account_id
+      JOIN profiles p ON o.profile_id = p.id AND o.account_id = p.account_id
+      WHERE o.account_id = ?
+        AND o.profile_id = ?
+        AND o.scheduled_date >= ?
+        AND o.scheduled_date <= ?
+        AND o.status != 'CANCELLED'
+        AND mt.is_deleted = 0
+        AND m.is_deleted = 0
+        AND p.is_deleted = 0
+      ORDER BY o.scheduled_date ASC, o.scheduled_time ASC, m.name ASC
+    `).all(accountId, profileId, startDate, endDate) as DoseOccurrenceDto[];
+
+    return rows;
+  }
+
+  /**
    * Confirma a tomada de uma dose para uma ocorrência específica.
    * Cria registro na tabela dose_confirmations e atualiza dose_occurrences para 'CONFIRMED'.
    */
